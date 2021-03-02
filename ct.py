@@ -2,9 +2,12 @@ import math
 import time
 import numpy as np
 import cv2
+from sklearn.linear_model import LinearRegression
 
 import PIL
 from PIL import Image
+
+from myutils import *
 
 # Iterate through the set of processed images
 
@@ -22,7 +25,7 @@ runtime = 0
 #TODO: Calculations and assigning of objects into a sorted list
 
 # Lists
-object_list = []  # row: (x1, y1, x2, y2, class, threshold, x_center, y_center)
+object_list = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class, 5:threshold, 6:x_center, 7:y_center)
 length_list = []
 y_list = []
 
@@ -51,6 +54,7 @@ with open(file, 'r') as sorted_file:
             length_list.append(length)
             y_list.append(y_diag)
 
+
 # Average diagonal and height
 avg_diagonal = sum(length_list) / len(length_list)
 avg_height = sum(y_list) / len(y_list)
@@ -69,7 +73,21 @@ for obj in object_list:
     obj.extend((x_center, y_center))  # add the center point coordinate to the object
 
 print(object_list)
-# LinReg line detection
+
+# Partition data into layers (floors) - x_center [6], y_center [7]
+
+# Floor segmentation / detection - UTC algorithm
+floor_list = []
+
+x_thr = 0
+y_thr = avg_height/2
+y_avg = 0
+confidence = 0
+
+i = 0
+for obj in object_list:
+    floor_list[i].append(obj)
+
 
 """
 img = cv2.imread('dave.jpg')
