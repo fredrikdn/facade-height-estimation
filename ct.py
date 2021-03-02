@@ -25,9 +25,11 @@ runtime = 0
 #TODO: Calculations and assigning of objects into a sorted list
 
 # Lists
-object_list = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class, 5:threshold, 6:x_center, 7:y_center)
+object_list = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class (Window: 0.0; Door: 1.0; Balcony: 2.0),
+                    # 5:threshold, 6:x_center, 7:y_center)
+
 length_list = []
-y_list = []
+height_list = []  # list of heights (y value)
 
 # Get width / height of the given pic
 width, height = image.size
@@ -52,92 +54,139 @@ with open(file, 'r') as sorted_file:
             y_diag = tmp[3] - tmp[1]
             length = math.sqrt(x_diag**2 + y_diag**2)
             length_list.append(length)
-            y_list.append(y_diag)
-
-
-# Average diagonal and height
-avg_diagonal = sum(length_list) / len(length_list)
-avg_height = sum(y_list) / len(y_list)
-y_max = max(y_list)
-
-print('Window diagonal avg: ', avg_diagonal)
-print('Window height avg: ', avg_height)
-print('Window max height: ', y_max)
+            height_list.append(y_diag)
 
 #TODO: Arrange image into network of objects and floors --- "strips"
 
-# Object center coordinate
+# OBJECT MANIPULATION: coordinates, center, etc.
+
 for obj in object_list:
     x_center = obj[0] + ((obj[2] - obj[0]) / 2)
     y_center = obj[1] + ((obj[3] - obj[1]) / 2)
     obj.extend((x_center, y_center))  # add the center point coordinate to the object
 
-print(object_list)
+# WINDOW MANIPULATION
 
+# Average diagonal and height
+avg_diagonal = sum(length_list) / len(length_list)
+avg_height = sum(height_list) / len(height_list)
+y_max = max(height_list)
+
+print('Window diagonal avg: ', avg_diagonal)
+print('Window height avg: ', avg_height)
+print('Window max height: ', y_max)
+
+window_list = []
+for o in object_list:
+    if o[4] == 0.0:
+        window_list.append(o)
+
+# FLOOR DETECTION
 # Partition data into layers (floors) - x_center [6], y_center [7]
-
 # Floor segmentation / detection - UTC algorithm
-floor_list = []
-
-x_thr = 0
-y_thr = avg_height/2
-y_avg = 0
-confidence = 0
-
-i = 0
-for obj in object_list:
-    floor_list[i].append(obj)
 
 
-"""
-img = cv2.imread('dave.jpg')
-gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-edges = cv2.Canny(gray,50,150,apertureSize = 3)
-minLineLength = width  # set to image width
-maxLineGap = avg_height  # avg window height
-lines = cv2.HoughLinesP(edges,1,np.pi/180,100,minLineLength,maxLineGap)
-for x1,y1,x2,y2 in lines[0]:
-    cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
+def detect_floors(objects):
+    f_list = []
+    # Set constraint as input from another function
+    constraint = 0.1  # should be based on relationship between x and y values
 
-cv2.imwrite('houghlines5.jpg',img)
-"""
+    tmp_floor = []
 
-"""
-# Strip size
-strip_list = []
+    # For each object, assign floor value:
+    for index, ob in enumerate(objects):
 
-strip_threshold = avg_height + (y_max - avg_height)
-y0 = height
+        # For elements which are not the last two objects
+        if index < len(objects) - 1:
+            next_ob = objects[index + 1]
 
-for obj in sorted_list:
-    if obj[1] > strip_threshold and obj[3] < y0:
-        a = 1
+            # Object coordinates
+            c_xx = ob[6]
+            c_yy = ob[7]
 
-"""
-#TODO: For each strip: calculate crucial values s.a. avg size, no. windows, presence of object types, ...
+            n_xx = next_ob[6]
+            n_yy = next_ob[7]
 
-'''
-sort by coords:
-    check if line is within threshold:
+            x_list = np.array([c_xx, n_xx])
+            y_list = np.array([c_yy, n_yy])
 
-sort by type and size:
-    round, square, big small ...
+            # Constraint calculation
+            slope = np.polyfit(x_list, y_list, 1)[0]
 
-calculate the threshold for closeness of windows (i.e. small pixel diff from top to bottom of two distinct windows)
--> calculate the relative size of windows / diagonal length, find threshold based on this
+            # Add the currently accumulated floor to its corresponding floor in f_list
+            if abs(slope) > constraint:
+                if not index == 0:
+                    f_list.append(tmp_floor)
+                    tmp_floor = []
+                    print("FLOOR LIST: ", f_list)
+                else:
+                    f_list.append([ob])
 
-for (x + 10; y++):
-    if(x > xy1 && x < xy2 && not a vertical line && check for window type):
-        counter ++
+            else:
+                tmp_floor.append(ob)
+                print("Current Floor: ", tmp_floor)
+
+            print("CURR ==> XX: ", c_xx, "     YY: ", c_yy)
+            print("NEXT ==> XX: ", n_xx, "     YY: ", n_yy)
+            print("SLOPE: ", slope)
+
+        # The last two objects
+        else:
+            prev_ob = objects[index - 1]
+
+            # Last object coordinates
+            l_xx = ob[6]
+            l_yy = ob[7]
+
+            # Previous object coordinates
+            p_xx = prev_ob[6]
+            p_yy = prev_ob[7]
+
+            x_pair = np.array([l_xx, p_xx])
+            y_pair = np.array([l_yy, p_yy])
+
+            # Line calculation
+            slope = np.polyfit(x_pair, y_pair, 1)[0]
+
+            if abs(slope) < constraint:
+                tmp_floor.append(ob)
+                f_list.append(tmp_floor)
+
+            else:
+                f_list.append([ob])
+
+            print("LAST ==> XX: ", l_xx, "     YY: ", l_yy)
+            print("PREVIOUS ==> XX: ", p_xx, "     YY: ", p_yy)
+            print("SLOPE: ", slope)
+            print(" --------- ")
+        print("FLOOR LIST: ", f_list)
+        print("FLOORS: ", len(f_list))
+
+    return f_list
+
+
+def draw_floorlines(floors):
+    facade = floors
+
+    line_list = []
+
+    for index, floor in enumerate(facade):
+        xx = []
+        yy = []
+        for obj in floor:
+            xx.append(obj[6])
+            yy.append(obj[7])
+        x_list = np.array(xx)
+        y_list = np.array(yy)
+
+        line = np.polyfit(x_list, y_list, 1)
+        line_list.append(line)
         
-        
 
 
-!! Height of building - cross check with camera parameters of the TK-car photos of facades ++ ground truth data
-'''
 
-
-# Calculate the size (ratio) of a given window
-
-runtime = (time.time() - start_time)
-print("--- %s seconds ---" % runtime)
+if __name__ == '__main__':
+    floors = detect_floors(window_list)
+    draw_floorlines(floors)
+    runtime = (time.time() - start_time)
+    print("--- %s seconds ---" % runtime)
