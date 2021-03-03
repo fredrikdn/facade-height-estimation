@@ -8,6 +8,7 @@ import PIL
 from PIL import Image
 
 from myutils import *
+from heightutils import *
 
 # Iterate through the set of processed images
 
@@ -22,7 +23,7 @@ file = 'output/' + pic_s
 start_time = time.time()
 runtime = 0
 
-#TODO: Calculations and assigning of objects into a sorted list
+# Calculations and assigning of objects into a sorted list
 
 # Lists
 object_list = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class (Window: 0.0; Door: 1.0; Balcony: 2.0),
@@ -56,7 +57,7 @@ with open(file, 'r') as sorted_file:
             length_list.append(length)
             height_list.append(y_diag)
 
-#TODO: Arrange image into network of objects and floors --- "strips"
+# TODO: Arrange image into network of objects and floors
 
 # OBJECT MANIPULATION: coordinates, center, etc.
 
@@ -81,112 +82,10 @@ for o in object_list:
     if o[4] == 0.0:
         window_list.append(o)
 
-# FLOOR DETECTION
-# Partition data into layers (floors) - x_center [6], y_center [7]
-# Floor segmentation / detection - UTC algorithm
-
-
-def detect_floors(objects):
-    f_list = []
-    # Set constraint as input from another function
-    constraint = 0.1  # should be based on relationship between x and y values
-
-    tmp_floor = []
-
-    # For each object, assign floor value:
-    for index, ob in enumerate(objects):
-
-        # For elements which are not the last two objects
-        if index < len(objects) - 1:
-            next_ob = objects[index + 1]
-
-            # Object coordinates
-            c_xx = ob[6]
-            c_yy = ob[7]
-
-            n_xx = next_ob[6]
-            n_yy = next_ob[7]
-
-            x_list = np.array([c_xx, n_xx])
-            y_list = np.array([c_yy, n_yy])
-
-            # Constraint calculation
-            slope = np.polyfit(x_list, y_list, 1)[0]
-
-            # Add the currently accumulated floor to its corresponding floor in f_list
-            if abs(slope) > constraint:
-                if not index == 0:
-                    f_list.append(tmp_floor)
-                    tmp_floor = []
-                    print("FLOOR LIST: ", f_list)
-                else:
-                    f_list.append([ob])
-
-            else:
-                tmp_floor.append(ob)
-                print("Current Floor: ", tmp_floor)
-
-            print("CURR ==> XX: ", c_xx, "     YY: ", c_yy)
-            print("NEXT ==> XX: ", n_xx, "     YY: ", n_yy)
-            print("SLOPE: ", slope)
-
-        # The last two objects
-        else:
-            prev_ob = objects[index - 1]
-
-            # Last object coordinates
-            l_xx = ob[6]
-            l_yy = ob[7]
-
-            # Previous object coordinates
-            p_xx = prev_ob[6]
-            p_yy = prev_ob[7]
-
-            x_pair = np.array([l_xx, p_xx])
-            y_pair = np.array([l_yy, p_yy])
-
-            # Line calculation
-            slope = np.polyfit(x_pair, y_pair, 1)[0]
-
-            if abs(slope) < constraint:
-                tmp_floor.append(ob)
-                f_list.append(tmp_floor)
-
-            else:
-                f_list.append([ob])
-
-            print("LAST ==> XX: ", l_xx, "     YY: ", l_yy)
-            print("PREVIOUS ==> XX: ", p_xx, "     YY: ", p_yy)
-            print("SLOPE: ", slope)
-            print(" --------- ")
-        print("FLOOR LIST: ", f_list)
-        print("FLOORS: ", len(f_list))
-
-    return f_list
-
-
-def draw_floorlines(floors):
-    facade = floors
-
-    line_list = []
-
-    for index, floor in enumerate(facade):
-        xx = []
-        yy = []
-        for obj in floor:
-            xx.append(obj[6])
-            yy.append(obj[7])
-        x_list = np.array(xx)
-        y_list = np.array(yy)
-
-        line = np.polyfit(x_list, y_list, 1)
-        line_list.append(line)
-        
-
-
 
 if __name__ == '__main__':
     floors = detect_floors(window_list)
     draw_floorlines(floors)
+    draw_centers(window_list, folder+pic)
     runtime = (time.time() - start_time)
     print("--- %s seconds ---" % runtime)
