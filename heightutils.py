@@ -1,6 +1,9 @@
 import numpy as np
 import cv2
 import math
+import random
+from sklearn import linear_model
+import matplotlib.pyplot as plt
 
 # ----------------------------- Sorting -------------------------------------
 
@@ -58,6 +61,78 @@ def sorted_array(file):  # Sort and create an array of coordinates
 # FLOOR DETECTION
 # Partition data into layers (floors) - x_center [6], y_center [7]
 # Floor segmentation / detection - UTC algorithm
+
+def multiransac(objects, height, width):  # RANSAC estimates for detecting floor lines
+    f_list = []
+
+    MIN_SAMPLES = 2
+
+    xs, ys = [], []
+    # Set scale (to ensure values between 0-100):
+    scale = 100
+
+    for obj in objects:
+        xs.append(obj[6] / scale)
+        ys.append(obj[7] / scale)
+
+    xs = np.array(xs)
+    ys = np.array(ys)
+    print("Xs: ", xs)
+    print("Ys: ", ys)
+    plt.plot(xs, ys, "r.")
+
+    plt.show()
+
+    colors = "rgbcmykw"
+
+    idx = 0
+
+    while len(xs) > MIN_SAMPLES:
+        # build design matrix for linear regressor
+        X = np.ones((len(xs), 2))
+        X[:, 1] = xs
+
+        ransac = linear_model.RANSACRegressor(
+            residual_threshold=.25, min_samples=MIN_SAMPLES
+        )
+
+        res = ransac.fit(X, ys)
+
+        # vector of boolean values, describes which points belong
+        # to the fitted line:
+        inlier_mask = ransac.inlier_mask_
+
+        # plot point cloud:
+        xinlier = xs[inlier_mask]
+        yinlier = ys[inlier_mask]
+        print("INLIERS x: ", xinlier)
+        print("INLIERS y: ", yinlier)
+
+        # find and append object from object list, whose xs and ys correspond to inliers
+        tmp_floor = []
+        for obj in objects:
+            for x in xinlier:
+                if x == obj[6] / scale:
+                    for y in yinlier:
+                        if y == obj[7] / scale:
+                            tmp_floor.append(obj)
+        print("tmp floor: ", tmp_floor)
+        if len(tmp_floor) > 1:
+            f_list.append(tmp_floor)
+        print("floors: ", f_list)
+
+        # circle through colors:
+        color = colors[idx % len(colors)]
+        idx += 1
+        plt.plot(xinlier, yinlier, color + "*")
+
+        # only keep the outliers:
+        xs = xs[~inlier_mask]
+        ys = ys[~inlier_mask]
+
+    plt.show()
+
+    return f_list
 
 
 def detect_floors(objects):  # Detecting floors on the facade from object coordinates
@@ -205,10 +280,10 @@ def draw_lines_centers(objects, flrs, img, width):
         start_p = (0, int(line[1]))
         end_p = (int(width), int(line[1] + (line[0] * width)))
 
-        cv2.line(image, start_p, end_p, (0, 255, 255), 1)
+        cv2.line(image, start_p, end_p, (0, 255, 255), 3)
 
     for obj in objects:
-        image = cv2.circle(image, (int(obj[6]), int(obj[7])), radius=2, color=(0, 0, 255), thickness=-1)
+        image = cv2.circle(image, (int(obj[6]), int(obj[7])), radius=3, color=(0, 0, 255), thickness=-1)
 
     name = img + "-lines_points.jpg"
 

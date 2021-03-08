@@ -38,6 +38,9 @@ windows = []
 # Get width / height of the given pic
 width, height = image.size
 
+print("width: ", width)
+print("height: ", height)
+
 # Average diagonal and height
 """
 avg_diagonal = sum(length_list) / len(length_list)
@@ -52,10 +55,14 @@ print('Window max height: ', y_max)
 
 if __name__ == '__main__':
     #sort_y(infile)
+
     objects, length, height, windows = sorted_array(sort_file)
-    floors = detect_floors(windows)
-    #draw_centers(windows, folder+pic)
-    #draw_floorlines(floors, folder+pic, width)
-    draw_lines_centers(windows, floors, imgs+pic, width)
+    #floors = detect_floors(windows)
+    floors = multiransac(windows, height, width)
+
+    draw_centers(windows, folder+pic)
+    draw_floorlines(floors, folder+pic, width)
+
+    draw_lines_centers(windows, floors, folder+pic, width)
     runtime = (time.time() - start_time)
     print("--- %s seconds ---" % runtime)
