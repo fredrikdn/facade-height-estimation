@@ -10,10 +10,13 @@ from PIL import Image
 from myutils import *
 from heightutils import *
 
+start_time = time.time()
+runtime = 0
+
 # Processing of the images:
 imgs = "testimg/"
 folder = 'output/'
-pic = 'trondheim-test.jpg'
+pic = 'trondheim-testo.jpg'
 
 pic_c = pic + '.txt'
 pic_s = pic_c + '-sorted.txt'
@@ -24,12 +27,10 @@ image = PIL.Image.open(folder + pic)
 
 sort_file = folder + pic_s
 
-start_time = time.time()
-runtime = 0
-
 # Lists
 objects = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class (Window: 0.0; Door: 1.0; Balcony: 2.0),
-                    # 5:threshold, 6:x_center, 7:y_center)
+# 5:threshold, 6:x_center, 7:y_center, 8:x_left, 9:y_left, 10:x_right, 11:y_right)
+
 
 lengths = []
 heights = []  # list of heights (y value)
@@ -38,23 +39,8 @@ windows = []
 # Get width / height of the given pic
 width, height = image.size
 
-print("width: ", width)
-print("height: ", height)
-
-# Average diagonal and height
-"""
-avg_diagonal = sum(length_list) / len(length_list)
-avg_height = sum(height_list) / len(height_list)
-y_max = max(height_list)
-
-print('Window diagonal avg: ', avg_diagonal)
-print('Window height avg: ', avg_height)
-print('Window max height: ', y_max)
-"""
-
-
 if __name__ == '__main__':
-    #sort_y(infile)
+    sort_y(infile)
 
     objects, length, height, windows = sorted_array(sort_file)
     #floors = detect_floors(windows)
