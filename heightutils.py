@@ -45,10 +45,17 @@ def sorted_array(file):  # Sort and create an array of coordinates
                 length_list.append(length)
                 height_list.append(y_diag)
 
+    # Find coordinates for left, right, center:
     for obj in object_list:
         x_center = obj[0] + ((obj[2] - obj[0]) / 2)
         y_center = obj[1] + ((obj[3] - obj[1]) / 2)
-        obj.extend((x_center, y_center))  # add the center point coordinate to the object
+
+        x_left = obj[0]
+        y_left = y_center
+        x_right = obj[2]
+        y_right = y_center
+
+        obj.extend((x_center, y_center, x_left, y_left, x_right, y_right))  # add the coordinates to the object
 
     for o in object_list:
         if o[4] == 0.0:
@@ -65,15 +72,21 @@ def sorted_array(file):  # Sort and create an array of coordinates
 def multiransac(objects, height, width):  # RANSAC estimates for detecting floor lines
     f_list = []
 
-    MIN_SAMPLES = 2
+    MIN_SAMPLES = 3
 
     xs, ys = [], []
-    # Set scale (to ensure values between 0-100):
+    # TODO: Set scale (to ensure values between 0-100):
     scale = 100
 
     for obj in objects:
         xs.append(obj[6] / scale)
         ys.append(obj[7] / scale)
+
+        xs.append(obj[8] / scale)
+        ys.append(obj[9] / scale)
+
+        xs.append(obj[10] / scale)
+        ys.append(obj[11] / scale)
 
     xs = np.array(xs)
     ys = np.array(ys)
@@ -93,10 +106,15 @@ def multiransac(objects, height, width):  # RANSAC estimates for detecting floor
         X[:, 1] = xs
 
         ransac = linear_model.RANSACRegressor(
-            residual_threshold=.25, min_samples=MIN_SAMPLES
+            residual_threshold=.4, min_samples=MIN_SAMPLES
         )
 
         res = ransac.fit(X, ys)
+        score = ransac.score(X, ys)
+
+        # Score is misleading, as the R^2 is calculated with multiransac
+            # --> many points will be outliers initially and reduced iteratively
+        print("Score: ", score)
 
         # vector of boolean values, describes which points belong
         # to the fitted line:
