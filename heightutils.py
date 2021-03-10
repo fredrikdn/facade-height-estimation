@@ -4,6 +4,33 @@ import math
 import random
 from sklearn import linear_model
 import matplotlib.pyplot as plt
+import os
+import PIL
+
+# -------------------------------------- File processing ------------------------------------------
+
+# TODO: make it read and iterate through all files, not just the target
+def read_img(path, folder, target):
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.name.endswith(".jpg") and entry.is_file():
+                pic = entry.name
+                print("NAME: ", entry.name)
+
+                pic_c = pic + '.txt'
+                pic_s = pic_c + '-sorted.txt'
+
+                infile = folder + pic_c
+                sort_file = folder + pic_s
+
+                # Get width / height of the given pic
+                image = PIL.Image.open(folder + pic)
+                width, height = image.size
+                if target != '' and entry.name == target:
+                    break
+
+    return infile, sort_file, pic, height, width
+
 
 # ----------------------------- Sorting -------------------------------------
 
@@ -65,11 +92,10 @@ def sorted_array(file):  # Sort and create an array of coordinates
 
 
 # ----------------------------- Floor utils -------------------------------------
-# FLOOR DETECTION
-# Partition data into layers (floors) - x_center [6], y_center [7]
-# Floor segmentation / detection - UTC algorithm
+# FLOOR DETECTION: Floor segmentation / detection - UTC algorithm
 
-def multiransac(objects, height, width):  # RANSAC estimates for detecting floor lines
+
+def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floor lines
     f_list = []
 
     MIN_SAMPLES = 3
@@ -79,25 +105,16 @@ def multiransac(objects, height, width):  # RANSAC estimates for detecting floor
     scale = 100
 
     for obj in objects:
-        xs.append(obj[6] / scale)
-        ys.append(obj[7] / scale)
-
-        xs.append(obj[8] / scale)
-        ys.append(obj[9] / scale)
-
-        xs.append(obj[10] / scale)
-        ys.append(obj[11] / scale)
+        # (center, left, right) coordinates for xs and ys
+        xs.extend((obj[6] / scale, obj[8] / scale, obj[10] / scale))
+        ys.extend((obj[7] / scale, obj[9] / scale, obj[11] / scale))
 
     xs = np.array(xs)
     ys = np.array(ys)
-    print("Xs: ", xs)
-    print("Ys: ", ys)
-    plt.plot(xs, ys, "r.")
 
     plt.show()
 
     colors = "rgbcmykw"
-
     idx = 0
 
     while len(xs) > MIN_SAMPLES:
@@ -233,6 +250,27 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
     return f_list
 
 
+def update_floors(floors):
+
+    for index, floor in enumerate(floors):
+        xx = []
+        yy = []
+        for obj in floor:
+            xx.extend((obj[8], obj[6], obj[10]))
+            yy.extend((obj[9], obj[7], obj[11]))
+        x_list = np.array(xx)
+        y_list = np.array(yy)
+
+        # Angle check (x deg):
+        line = np.polyfit(x_list, y_list, 1)
+        if abs(line[0]) > 0.2:  # May be chosen using statistics for each floor
+            floors.pop(index)
+
+        #
+
+    return floors
+
+
 # --------------------------------- Plotting utils -------------------------------------
 # Draw on building images for visualisation purposes
 
@@ -256,8 +294,8 @@ def draw_floorlines(flrs, img, width):  # Draw floor lines
         xx = []
         yy = []
         for obj in floor:
-            xx.append(obj[6])
-            yy.append(obj[7])
+            xx.extend((obj[8], obj[6], obj[10]))
+            yy.extend((obj[9], obj[7], obj[11]))
         x_list = np.array(xx)
         y_list = np.array(yy)
 
@@ -277,15 +315,17 @@ def draw_floorlines(flrs, img, width):  # Draw floor lines
         cv2.imwrite(name, image)
 
 
-def draw_lines_centers(objects, flrs, img, width):
+def draw_lines_centers(objects, flrs, path, pic, output, width):
     line_list = []
+    # Image path and name
+    img = path + pic
 
     for index, floor in enumerate(flrs):
         xx = []
         yy = []
         for obj in floor:
-            xx.append(obj[6])
-            yy.append(obj[7])
+            xx.extend((obj[8], obj[6], obj[10]))
+            yy.extend((obj[9], obj[7], obj[11]))
         x_list = np.array(xx)
         y_list = np.array(yy)
 
@@ -303,7 +343,7 @@ def draw_lines_centers(objects, flrs, img, width):
     for obj in objects:
         image = cv2.circle(image, (int(obj[6]), int(obj[7])), radius=3, color=(0, 0, 255), thickness=-1)
 
-    name = img + "-lines_points.jpg"
+    name = output + pic + "-lines_points.jpg"
 
     if image is not None:
         cv2.imwrite(name, image)
