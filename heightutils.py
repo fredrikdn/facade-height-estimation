@@ -9,28 +9,22 @@ import PIL
 
 # -------------------------------------- File processing ------------------------------------------
 
-# TODO: make it read and iterate through all files, not just the target
-def read_img(path, folder, target):
-    with os.scandir(path) as it:
-        for entry in it:
-            if entry.name.endswith(".jpg") and entry.is_file():
-                pic = entry.name
-                print("NAME: ", entry.name)
+def read_file(entry, folder):
+    if entry.name.endswith(".jpg") and entry.is_file():
+        pic = entry.name
+        print("NAME: ", entry.name)
 
-                pic_c = pic + '.txt'
-                pic_s = pic_c + '-sorted.txt'
+        pic_c = pic + '.txt'
+        pic_s = pic_c + '-sorted.txt'
 
-                infile = folder + pic_c
-                sort_file = folder + pic_s
+        infile = folder + pic_c
+        sort_file = folder + pic_s
 
-                # Get width / height of the given pic
-                image = PIL.Image.open(folder + pic)
-                width, height = image.size
-                if target != '' and entry.name == target:
-                    break
+        # Get width / height of the given pic
+        image = PIL.Image.open(folder + pic)
+        width, height = image.size
 
     return infile, sort_file, pic, height, width
-
 
 # ----------------------------- Sorting -------------------------------------
 
@@ -84,12 +78,43 @@ def sorted_array(file):  # Sort and create an array of coordinates
 
         obj.extend((x_center, y_center, x_left, y_left, x_right, y_right))  # add the coordinates to the object
 
+    # TODO: add object size and ratios, etc.
+
     for o in object_list:
         if o[4] == 0.0:
             window_list.append(o)
 
     return object_list, length_list, height_list, window_list
 
+
+# TODO: FIX, not working at all
+def sort_floors(floors):
+    # Assign avg y value to each floor
+    for floor in floors:
+        yy = []
+        for obj in floor:
+            yy.extend((obj[9], obj[7], obj[11]))
+        y_list = np.array(yy)
+        y_avg = sum(y_list) / len(y_list)
+        floor.append(y_avg)
+        print("FLOOR Y: ", floor[len(floor)-1])
+
+    print("FlOORS UNSORTED: ", floors)
+
+    # Insertion sort:
+    for i in range(1, len(floors)):
+        floor = floors[i]
+        print("KEY: ", floor)
+
+        j = i - 1
+        floor_0 = floors[j]
+        while j >= 0 and floor[len(floor)-1] < floor_0[len(floor_0)-1]:
+            floors[j + 1] = floors[j]
+            j -= 1
+        floors[j + 1] = floor
+
+    print("FLOORS SORTED: ", floors)
+    return floors
 
 # ----------------------------- Floor utils -------------------------------------
 # FLOOR DETECTION: Floor segmentation / detection - UTC algorithm
@@ -123,7 +148,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         X[:, 1] = xs
 
         ransac = linear_model.RANSACRegressor(
-            residual_threshold=.4, min_samples=MIN_SAMPLES
+            residual_threshold=.33, min_samples=MIN_SAMPLES
         )
 
         res = ransac.fit(X, ys)
@@ -140,8 +165,8 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         # plot point cloud:
         xinlier = xs[inlier_mask]
         yinlier = ys[inlier_mask]
-        print("INLIERS x: ", xinlier)
-        print("INLIERS y: ", yinlier)
+        #print("INLIERS x: ", xinlier)
+        #print("INLIERS y: ", yinlier)
 
         # find and append object from object list, whose xs and ys correspond to inliers
         tmp_floor = []
@@ -151,7 +176,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
                     for y in yinlier:
                         if y == obj[7] / scale:
                             tmp_floor.append(obj)
-        print("tmp floor: ", tmp_floor)
+        #print("tmp floor: ", tmp_floor)
         if len(tmp_floor) > 1:
             f_list.append(tmp_floor)
         print("floors: ", f_list)
@@ -251,13 +276,19 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
 
 
 def update_floors(floors):
+    ys = []
 
     for index, floor in enumerate(floors):
         xx = []
         yy = []
+
+        id = 0
         for obj in floor:
-            xx.extend((obj[8], obj[6], obj[10]))
-            yy.extend((obj[9], obj[7], obj[11]))
+            if id < len(floor)-1:
+                xx.extend((obj[8], obj[6], obj[10]))
+                yy.extend((obj[9], obj[7], obj[11]))
+                id += 1
+
         x_list = np.array(xx)
         y_list = np.array(yy)
 
@@ -266,7 +297,15 @@ def update_floors(floors):
         if abs(line[0]) > 0.2:  # May be chosen using statistics for each floor
             floors.pop(index)
 
-        #
+        # Proximity check (dist between floors,  f1 - f2):
+        ys.append(sum(y_list) / len(y_list))
+        print("Ys: ", ys)
+
+    for index, y in enumerate(ys):
+        # index not at last pos
+        if index < len(ys) - 1:
+            d = abs(ys[index + 1] - y)
+            print("Distance: ", d)
 
     return floors
 
@@ -323,9 +362,14 @@ def draw_lines_centers(objects, flrs, path, pic, output, width):
     for index, floor in enumerate(flrs):
         xx = []
         yy = []
+
+        id = 0
         for obj in floor:
-            xx.extend((obj[8], obj[6], obj[10]))
-            yy.extend((obj[9], obj[7], obj[11]))
+            if id < len(floor) - 1:
+                xx.extend((obj[8], obj[6], obj[10]))
+                yy.extend((obj[9], obj[7], obj[11]))
+                id += 1
+
         x_list = np.array(xx)
         y_list = np.array(yy)
 

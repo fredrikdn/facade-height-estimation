@@ -20,19 +20,23 @@ windows = []  # window list
 
 if __name__ == '__main__':
     # TODO: Works for reading the last file, make it work on the whole directory
-    infile, sort_file, pic, height, width = read_img(path, folder, target)
+    with os.scandir(path) as it:
+        for entry in it:
+            infile, sort_file, pic, height, width = read_file(entry, folder)
 
-    sort_y(infile)
+            sort_y(infile)
 
-    objects, length, height, windows = sorted_array(sort_file)
-    floors = multi_ransac(windows, height, width)
-    print("FLOORS: ", len(floors))
-    # TODO: Update floor list, remove misclassified objects
-    update_floors(floors)
-    print("UPDATED FLOORS: ", len(floors))
+            objects, length, height, windows = sorted_array(sort_file)
+            floors = multi_ransac(windows, height, width)
+            print("#FLOORS: ", len(floors))
 
-    #draw_centers(windows, path+pic)
-    #draw_floorlines(floors, path+pic, width)
-    draw_lines_centers(windows, floors, path, pic, vis, width)
-    runtime = (time.time() - start_time)
-    print("--- %s seconds ---" % runtime)
+            floors = sort_floors(floors)
+            update_floors(floors)
+            print("UPDATED #FLOORS: ", len(floors))
+
+            #draw_centers(windows, path+pic)
+            #draw_floorlines(floors, path+pic, width)
+
+            draw_lines_centers(windows, floors, path, pic, vis, width)
+            runtime = (time.time() - start_time)
+            print("--- %s seconds ---" % runtime)

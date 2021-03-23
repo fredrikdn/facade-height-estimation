@@ -4,7 +4,7 @@ import time
 
 start_time = time.time()
 
-img = "output/trondheim-test.jpg.txt"
+img = "output/trondheim-testo.jpg.txt"
 
 
 def sort_y(file):
