@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 import os
 import PIL
 
+# URL
+import hashlib
+import hmac
+import base64
+import urllib.parse as urlparse
+
 # -------------------------------------- File processing ------------------------------------------
 
 def read_file(entry, folder):
@@ -25,6 +31,44 @@ def read_file(entry, folder):
         width, height = image.size
 
     return infile, sort_file, pic, height, width
+
+
+def sign_url(input_url=None, secret=None):
+    """ Sign a request URL with a URL signing secret.
+      Usage:
+      from urlsigner import sign_url
+      signed_url = sign_url(input_url=my_url, secret=SECRET)
+      Args:
+      input_url - The URL to sign
+      secret    - Your URL signing secret
+      Returns:
+      The signed request URL
+  """
+
+    if not input_url or not secret:
+        raise Exception("Both input_url and secret are required")
+
+    url = urlparse.urlparse(input_url)
+
+    # We only need to sign the path+query part of the string
+    url_to_sign = url.path + "?" + url.query
+
+    # Decode the private key into its binary format
+    # We need to decode the URL-encoded private key
+    decoded_key = base64.urlsafe_b64decode(secret)
+
+    # Create a signature using the private key and the URL-encoded
+    # string using HMAC SHA1. This signature will be binary.
+    signature = hmac.new(decoded_key, str.encode(url_to_sign), hashlib.sha1)
+
+    # Encode the binary signature into base64 for use within a URL
+    encoded_signature = base64.urlsafe_b64encode(signature.digest())
+
+    original_url = url.scheme + "://" + url.netloc + url.path + "?" + url.query
+
+    # Return signed URL
+    return original_url + "&signature=" + encoded_signature.decode()
+
 
 # ----------------------------- Sorting -------------------------------------
 
@@ -87,7 +131,6 @@ def sorted_array(file):  # Sort and create an array of coordinates
     return object_list, length_list, height_list, window_list
 
 
-# TODO: FIX, not working at all
 def sort_floors(floors):
     # Assign avg y value to each floor
     for floor in floors:
@@ -275,7 +318,8 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
     return f_list
 
 
-def update_floors(floors):
+# Removes faulty floors (by angle, distance, etc.)
+def update_floors(floors, height):
     ys = []
 
     for index, floor in enumerate(floors):
@@ -306,6 +350,7 @@ def update_floors(floors):
         if index < len(ys) - 1:
             d = abs(ys[index + 1] - y)
             print("Distance: ", d)
+
 
     return floors
 
