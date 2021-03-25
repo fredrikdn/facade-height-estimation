@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 import os
 import PIL
 
-# URL
+# URL & Google
 import hashlib
 import hmac
 import base64
 import urllib.parse as urlparse
+import urllib.request as urlrequest
 
 # -------------------------------------- File processing ------------------------------------------
 
@@ -32,6 +33,8 @@ def read_file(entry, folder):
 
     return infile, sort_file, pic, height, width
 
+
+# --------------------------------------- Google API --------------------------------------------
 
 def sign_url(input_url=None, secret=None):
     """ Sign a request URL with a URL signing secret.
@@ -68,6 +71,13 @@ def sign_url(input_url=None, secret=None):
 
     # Return signed URL
     return original_url + "&signature=" + encoded_signature.decode()
+
+
+# Download images
+def get_img(loc, saveloc, signed):
+    url = signed
+    file = loc + ".jpg"
+    urlrequest.urlretrieve(url, os.path.join(saveloc, file))
 
 
 # ----------------------------- Sorting -------------------------------------

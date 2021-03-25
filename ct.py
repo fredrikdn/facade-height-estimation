@@ -3,9 +3,11 @@ from heightutils import *
 
 start_time = time.time()
 runtime = 0
+totaltime = 0
+
 
 # Processing of the images:
-path = "testimg/"
+path = 'testimg/'
 folder = 'output/'
 vis = 'visualisations/'
 target = 'trondheim-test.jpg'
@@ -19,7 +21,6 @@ windows = []  # window list
 
 
 if __name__ == '__main__':
-    # TODO: Works for reading the last file, make it work on the whole directory
     with os.scandir(path) as it:
         for entry in it:
             infile, sort_file, pic, height, width = read_file(entry, folder)
@@ -31,7 +32,7 @@ if __name__ == '__main__':
             print("#FLOORS: ", len(floors))
 
             floors = sort_floors(floors)
-            update_floors(floors)
+            update_floors(floors, height)
             print("UPDATED #FLOORS: ", len(floors))
 
             #draw_centers(windows, path+pic)
@@ -40,3 +41,6 @@ if __name__ == '__main__':
             draw_lines_centers(windows, floors, path, pic, vis, width)
             runtime = (time.time() - start_time)
             print("--- %s seconds ---" % runtime)
+
+totaltime = (time.time() - start_time)
+print("--- Total: %s seconds ---" % totaltime)
