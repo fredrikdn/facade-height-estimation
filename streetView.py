@@ -1,7 +1,8 @@
 from heightutils import *
+from js import get_heading
 
 pitch = '20'
-heading = '0'
+heading = ''
 size = '640x500'
 #location = 'Elgsetergate55,Trondheim'
 
@@ -11,22 +12,22 @@ totallynotasecret = 'HgCroea_Pd-P48CASC7mA5QfcNk='
 
 #signed_request = 'https://maps.googleapis.com/maps/api/streetview?location=60.425997830817806,5.6270301941489&size=456x456&key=AIzaSyBjbBw8oK8YI8Lnc4ExA-98VU4zmswp2i4&signature=d1CxJKNKGGbNlZlSWsxurQS4pOo='
 
-myloc = 'googleimages/'
+myloc = 'streetview/googleimages/'
 
 # TODO: locations should be gathered from a selected region (i.e. Trondheim) at intervals of x meters in any direction
 locations = [
-             '63.43087328085278,10.416326917556141',
-             '63.43341787203097,10.417870540615437'
+             'ovrebakklandet11trondheim'  # Points at the building with the corresponding address / given coordinate
              ]
-
 
 if __name__ == "__main__":
 
     for loc in locations:
 
-        # TODO: Framework for Python - request with express.js server to return google.maps.getPhotographerPov()
+        # TODO: Framework for Python - request (?with express.js server?) to return google.maps.getPhotographerPov()
         # This is typically the driving direction for the image
-        heading = ''
+
+        #heads = get_heading(loc)  # 2 headings --> for loop
+        #heading = heads[0]
         request = 'https://maps.googleapis.com/maps/api/streetview?size=' + size + '&location=' + loc + '&heading=' + \
                   heading + '&pitch=' + pitch + '&size=456x456&key=' + API_KEY
 
