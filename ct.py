@@ -1,85 +1,46 @@
-import math
 import time
-import PIL
-from PIL import Image
+from heightutils import *
 
-# Iterate through the set of processed images
-
-folder = 'output/'
-pic = 'heidelberg-1.jpg'
-pic_c = pic + '.txt'
-pic_s = pic_c + '-sorted.txt'
-
-image = PIL.Image.open(folder + pic)
-
-file = 'output/' + pic_s
 start_time = time.time()
 runtime = 0
+totaltime = 0
+
+
+# Processing of the images:
+path = 'testimg/'
+folder = 'output/'
+vis = 'visualisations/'
+target = 'trondheim-test.jpg'
 
 # Lists
-sorted_list = []
-length_list = []
-
-# Get width / height of the given pic
-width, height = image.size
-
-# Create a sorted list (array)
-with open(file, 'r') as sorted_file:
-    rows = sorted_file.readlines()
-    # for each processed object; do:
-    for row in rows:
-        splt = row.split()
-        tmp = []
-        i = 0
-        for s in splt:
-            tmp.append(float(s))
-            i = i + 1
-        sorted_list.append(tmp)
-
-        # Calculate and append diagonal length
-        if tmp[4] == 0.0:
-            x = tmp[2] - tmp[0]
-            y = tmp[3] - tmp[1]
-            length = math.sqrt(x**2 + y**2)
-            length_list.append(length)
-print(sorted_list)
-
-# Average window size
-avg_diagonal = sum(length_list) / len(length_list)
-print('Window diagonal avg: ', avg_diagonal)
-
-#TODO: Arrange image into horizontal strips
-
-#strip = height /
-
-for coords in sorted_list:
-    x1 = coords[0]
-    x2 = coords[2]
-
-#TODO: For each strip: calculate crucial values s.a. avg size, no. windows, presence of object types, ...
-
-'''
-sort by coords:
-    check if line is within threshold:
-
-sort by type and size:
-    round, square, big small ...
-
-calculate the threshold for closeness of windows (i.e. small pixel diff from top to bottom of two distinct windows)
--> calculate the relative size of windows / diagonal length, find threshold based on this
-
-for (x + 10; y++):
-    if(x > xy1 && x < xy2 && not a vertical line && check for window type):
-        counter ++
-        
-        
+objects = []  # row: (0:x1, 1:y1, 2:x2, 3:y2, 4:class (Window: 0.0; Door: 1.0; Balcony: 2.0),
+# 5:threshold, 6:x_center, 7:y_center, 8:x_left, 9:y_left, 10:x_right, 11:y_right)
+lengths = []  # length of object diagonals
+heights = []  # list of heights (y value)
+windows = []  # window list
 
 
-!! Height of building - cross check with camera parameters of the TK-car photos of facades ++ ground truth data
-'''
+if __name__ == '__main__':
+    with os.scandir(path) as it:
+        for entry in it:
+            infile, sort_file, pic, height, width = read_file(entry, folder)
 
+            sort_y(infile)
 
-# Calculate the size (ratio) of a given window
+            objects, length, height, windows = sorted_array(sort_file)
+            floors = multi_ransac(windows, height, width)
+            print("#FLOORS: ", len(floors))
 
-runtime = (time.time() - start_time)
-print("--- %s seconds ---" % runtime)
+            floors = sort_floors(floors)
+            update_floors(floors, height)
+            print("UPDATED #FLOORS: ", len(floors))
+
+            #draw_centers(windows, path+pic)
+            #draw_floorlines(floors, path+pic, width)
+
+            draw_lines_centers(windows, floors, path, pic, vis, width)
+            runtime = (time.time() - start_time)
+            print("--- %s seconds ---" % runtime)
+
+totaltime = (time.time() - start_time)
+print("--- Total: %s seconds ---" % totaltime)
