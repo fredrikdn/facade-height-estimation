@@ -72,6 +72,14 @@ def sign_url(input_url=None, secret=None):
     # Return signed URL
     return original_url + "&signature=" + encoded_signature.decode()
 
+# Define area of interest (street)
+def getStreet(street, post, city):
+    locations = []
+    for i in range(1, 10):
+        tmp = street + ',' + str(i) + ',' + post + ',' + city
+        locations.append(tmp)
+    return locations
+
 
 # Download images
 def get_img(loc, saveloc, signed):
@@ -112,31 +120,29 @@ def sorted_array(file):  # Sort and create an array of coordinates
                 i = i + 1
             object_list.append(tmp)
 
-            # Calculate and append length values for each window
-            if tmp[4] == 0.0:
-                x_diag = tmp[2] - tmp[0]
-                y_diag = tmp[3] - tmp[1]
-                length = math.sqrt(x_diag ** 2 + y_diag ** 2)
-                length_list.append(length)
-                height_list.append(y_diag)
-
     # Find coordinates for left, right, center:
     for obj in object_list:
+
         x_center = obj[0] + ((obj[2] - obj[0]) / 2)
         y_center = obj[1] + ((obj[3] - obj[1]) / 2)
 
-        x_left = obj[0]
+        x_left = obj[0] - 10
         y_left = y_center
-        x_right = obj[2]
+        x_right = obj[2] + 10
         y_right = y_center
 
         obj.extend((x_center, y_center, x_left, y_left, x_right, y_right))  # add the coordinates to the object
 
-    # TODO: add object size and ratios, etc.
+        # Calculate and append length values for each window
+        if obj[4] == 0.0 or obj[4] == 1.0:
+            x_width = tmp[2] - tmp[0]
+            y_height = tmp[3] - tmp[1]
+            length = math.sqrt(x_width ** 2 + y_height ** 2)
+            length_list.append(length)
+            height_list.append(y_height)
 
-    for o in object_list:
-        if o[4] == 0.0:
-            window_list.append(o)
+        if obj[4] == 0.0:
+            window_list.append(obj)
 
     return object_list, length_list, height_list, window_list
 
@@ -201,7 +207,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         X[:, 1] = xs
 
         ransac = linear_model.RANSACRegressor(
-            residual_threshold=.33, min_samples=MIN_SAMPLES
+            residual_threshold=.05, min_samples=MIN_SAMPLES
         )
 
         res = ransac.fit(X, ys)
@@ -247,11 +253,11 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
 
     return f_list
 
-
+# OLD METHOD ( MIGHT BE USED LATER IDK)
 def detect_floors(objects):  # Detecting floors on the facade from object coordinates
     f_list = []
     # Set constraint as input from another function
-    constraint = 0.1  # should be based on relationship between x and y values
+    constraint = 0.2  # should be based on relationship between x and y values
 
     tmp_floor = []
 
@@ -274,6 +280,7 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
 
             # Constraint calculation
             slope = np.polyfit(x_list, y_list, 1)[0]
+            print("SLOPE: ", slope)
 
             # Add the currently accumulated floor of objects to its entry in the f_list
             if abs(slope) > constraint:
@@ -347,7 +354,8 @@ def update_floors(floors, height):
         y_list = np.array(yy)
 
         # Angle check (x deg):
-        line = np.polyfit(x_list, y_list, 1)
+        line = np.polyfit(x_list, y_list, 1)  # [0] is slope
+        print("SLOPE: ", line)
         if abs(line[0]) > 0.2:  # May be chosen using statistics for each floor
             floors.pop(index)
 

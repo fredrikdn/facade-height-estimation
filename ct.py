@@ -7,7 +7,7 @@ totaltime = 0
 
 
 # Processing of the images:
-path = 'testimg/'
+path = 'googleimages/'
 folder = 'output/'
 vis = 'visualisations/'
 target = 'trondheim-test.jpg'
@@ -27,7 +27,9 @@ if __name__ == '__main__':
 
             sort_y(infile)
 
-            objects, length, height, windows = sorted_array(sort_file)
+            objects, lengths, heights, windows = sorted_array(sort_file)
+            print("OBJECTS: ", objects)
+            print("WINDOWS: ", windows)
             floors = multi_ransac(windows, height, width)
             print("#FLOORS: ", len(floors))
 
