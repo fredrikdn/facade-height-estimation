@@ -6,6 +6,7 @@ from sklearn import linear_model
 import matplotlib.pyplot as plt
 import os
 import PIL
+from operator import itemgetter
 
 # URL & Google
 import hashlib
@@ -148,7 +149,7 @@ def sorted_array(file):  # Sort and create an array of coordinates
 
 
 def sort_floors(floors):
-    # Assign avg y value to each floor
+    # Assign avg y-value to each floor
     for floor in floors:
         yy = []
         for obj in floor:
@@ -156,14 +157,14 @@ def sort_floors(floors):
         y_list = np.array(yy)
         y_avg = sum(y_list) / len(y_list)
         floor.append(y_avg)
-        print("FLOOR Y: ", floor[len(floor)-1])
+        #print("FLOOR Y: ", floor[len(floor)-1])
 
-    print("FlOORS UNSORTED: ", floors)
+    #print("FlOORS UNSORTED: ", floors)
 
     # Insertion sort:
     for i in range(1, len(floors)):
         floor = floors[i]
-        print("KEY: ", floor)
+        #print("KEY: ", floor)
 
         j = i - 1
         floor_0 = floors[j]
@@ -173,6 +174,16 @@ def sort_floors(floors):
         floors[j + 1] = floor
 
     print("FLOORS SORTED: ", floors)
+    print("#Floors: ", len(floors))
+    return floors
+
+
+# Sorting objects within floors (x value)
+def sort_objects(floors):
+    for floor in floors:
+        print("FLOOR BEFORE: ", floor)
+        floor = sorted(floor, key=itemgetter(0))
+        print("FLOOR AFTER: ", floor)
     return floors
 
 # ----------------------------- Floor utils -------------------------------------
@@ -207,7 +218,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         X[:, 1] = xs
 
         ransac = linear_model.RANSACRegressor(
-            residual_threshold=.05, min_samples=MIN_SAMPLES
+            residual_threshold=.067, min_samples=MIN_SAMPLES
         )
 
         res = ransac.fit(X, ys)
@@ -233,9 +244,10 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
             for x in xinlier:
                 if x == obj[6] / scale:
                     for y in yinlier:
-                        if y == obj[7] / scale:
+                        if y == obj[7] / scale and obj not in tmp_floor:
                             tmp_floor.append(obj)
-        #print("tmp floor: ", tmp_floor)
+                            print("tmp floor, iter: ", tmp_floor)
+        print("tmp floor: ", tmp_floor)
         if len(tmp_floor) > 1:
             f_list.append(tmp_floor)
         print("floors: ", f_list)
@@ -252,6 +264,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
     plt.show()
 
     return f_list
+
 
 # OLD METHOD ( MIGHT BE USED LATER IDK)
 def detect_floors(objects):  # Detecting floors on the facade from object coordinates
@@ -280,25 +293,25 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
 
             # Constraint calculation
             slope = np.polyfit(x_list, y_list, 1)[0]
-            print("SLOPE: ", slope)
+            #print("SLOPE: ", slope)
 
             # Add the currently accumulated floor of objects to its entry in the f_list
             if abs(slope) > constraint:
                 if not index == 0:
                     f_list.append(tmp_floor)
                     tmp_floor.clear()
-                    print("FLOOR LIST: ", f_list)
+                    #print("FLOOR LIST: ", f_list)
                 else:
                     f_list.append([ob])
 
             # Continue adding objects to current floor
             else:
                 tmp_floor.append(ob)
-                print("Current Floor: ", tmp_floor)
+                #print("Current Floor: ", tmp_floor)
 
-            print("CURR ==> XX: ", c_xx, "     YY: ", c_yy)
-            print("NEXT ==> XX: ", n_xx, "     YY: ", n_yy)
-            print("SLOPE: ", slope)
+            #print("CURR ==> XX: ", c_xx, "     YY: ", c_yy)
+            #print("NEXT ==> XX: ", n_xx, "     YY: ", n_yy)
+            #print("SLOPE: ", slope)
 
         # The last two objects
         else:
@@ -338,13 +351,14 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
 # Removes faulty floors (by angle, distance, etc.)
 def update_floors(floors, height):
     ys = []
-
+    tmp_floors = floors
     for index, floor in enumerate(floors):
         xx = []
         yy = []
-
+        tmp_floor = floor
         id = 0
         for obj in floor:
+
             if id < len(floor)-1:
                 xx.extend((obj[8], obj[6], obj[10]))
                 yy.extend((obj[9], obj[7], obj[11]))
@@ -353,22 +367,25 @@ def update_floors(floors, height):
         x_list = np.array(xx)
         y_list = np.array(yy)
 
-        # Angle check (x deg):
+        # Angle calculation - check (x deg):
         line = np.polyfit(x_list, y_list, 1)  # [0] is slope
-        print("SLOPE: ", line)
         if abs(line[0]) > 0.2:  # May be chosen using statistics for each floor
             floors.pop(index)
 
-        # Proximity check (dist between floors,  f1 - f2):
+        # Average Y value of floor -- Proximity check (dist between floors,  f1 - f2):
         ys.append(sum(y_list) / len(y_list))
-        print("Ys: ", ys)
+        #print("Ys: ", ys)
 
+    # TODO: Intersection calculation - remove obvious errors of intersecting floors
+    #for tmp_floor in tmp_floors:
+    #    print("TMPFLOOR: ", tmp_floor)
+
+    # Distance calculation:
     for index, y in enumerate(ys):
         # index not at last pos
         if index < len(ys) - 1:
             d = abs(ys[index + 1] - y)
             print("Distance: ", d)
-
 
     return floors
 

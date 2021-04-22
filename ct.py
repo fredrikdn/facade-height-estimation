@@ -1,5 +1,6 @@
 import time
 from heightutils import *
+from rules import *
 
 start_time = time.time()
 runtime = 0
@@ -24,19 +25,22 @@ if __name__ == '__main__':
     with os.scandir(path) as it:
         for entry in it:
             infile, sort_file, pic, height, width = read_file(entry, folder)
+            #sort_y(infile)
 
-            sort_y(infile)
+            # Create lists and segment/detect floors:
+            objects, lengths, heights, windows = sorted_array(infile)
+            #print("OBJECTS: ", objects)
+            #print("WINDOWS: ", windows)
 
-            objects, lengths, heights, windows = sorted_array(sort_file)
-            print("OBJECTS: ", objects)
-            print("WINDOWS: ", windows)
             floors = multi_ransac(windows, height, width)
-            print("#FLOORS: ", len(floors))
-
+            #print("#FLOORS: ", len(floors))
+            floors = sort_objects(floors)
             floors = sort_floors(floors)
             update_floors(floors, height)
-            print("UPDATED #FLOORS: ", len(floors))
+            #print("UPDATED #FLOORS: ", len(floors))
 
+            # Estimate height:
+            estimate_height(floors)
             #draw_centers(windows, path+pic)
             #draw_floorlines(floors, path+pic, width)
 
