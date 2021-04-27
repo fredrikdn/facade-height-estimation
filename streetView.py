@@ -32,7 +32,7 @@ if __name__ == "__main__":
                   heading + '&pitch=' + pitch + '&key=' + API_KEY
 
         # structure URL and download the image from street view
-        input_url = request 
+        input_url = request
         secret = totallynotasecret
         signed = sign_url(input_url, secret)
         print("...")

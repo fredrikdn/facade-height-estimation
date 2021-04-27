@@ -35,11 +35,12 @@ if __name__ == '__main__':
             floors = multi_ransac(windows, height, width)
             #print("#FLOORS: ", len(floors))
             floors = sort_objects(floors)
-            floors = sort_floors(floors)
+            floors = sort_floors_v2(floors)
             update_floors(floors, height)
             #print("UPDATED #FLOORS: ", len(floors))
 
             # Estimate height:
+
             estimate_height(floors)
             #draw_centers(windows, path+pic)
             #draw_floorlines(floors, path+pic, width)
@@ -47,6 +48,8 @@ if __name__ == '__main__':
             draw_lines_centers(windows, floors, path, pic, vis, width)
             runtime = (time.time() - start_time)
             print("--- %s seconds ---" % runtime)
+            print("   ")
 
 totaltime = (time.time() - start_time)
 print("--- Total: %s seconds ---" % totaltime)
+print("COUNTER TERRORIST WIN")

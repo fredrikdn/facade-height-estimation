@@ -73,6 +73,7 @@ def sign_url(input_url=None, secret=None):
     # Return signed URL
     return original_url + "&signature=" + encoded_signature.decode()
 
+
 # Define area of interest (street)
 def getStreet(street, post, city):
     locations = []
@@ -148,6 +149,7 @@ def sorted_array(file):  # Sort and create an array of coordinates
     return object_list, length_list, height_list, window_list
 
 
+# Sorting s.t. bottom floor is 0
 def sort_floors(floors):
     # Assign avg y-value to each floor
     for floor in floors:
@@ -178,12 +180,31 @@ def sort_floors(floors):
     return floors
 
 
+# Sorting objects within floors (y value)
+def sort_floors_v2(floors):
+    # Assign avg y-value to each floor
+    for floor in floors:
+        yy = []
+        for obj in floor:
+            yy.extend((obj[9], obj[7], obj[11]))
+        y_list = np.array(yy)
+        y_avg = sum(y_list) / len(y_list)
+        floor.append(y_avg)
+
+    # Sorts each floor in floors on y_avg value
+    #print("floors before floor sort:", floors)
+    floors = sorted(floors, key=lambda floor: floor[-1])
+    #print("floors after floor sort:", floors)
+    return floors
+
+
 # Sorting objects within floors (x value)
 def sort_objects(floors):
-    for floor in floors:
-        print("FLOOR BEFORE: ", floor)
+    for index, floor in enumerate(floors):
+        #print("FLOOR BEFORE: ", floor)
         floor = sorted(floor, key=itemgetter(0))
-        print("FLOOR AFTER: ", floor)
+        #print("FLOOR AFTER: ", floor)
+        floors[index] = floor
     return floors
 
 # ----------------------------- Floor utils -------------------------------------
@@ -226,7 +247,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
 
         # Score is misleading, as the R^2 is calculated with multiransac
             # --> many points will be outliers initially and reduced iteratively
-        print("Score: ", score)
+        #print("Score: ", score)
 
         # vector of boolean values, describes which points belong
         # to the fitted line:
@@ -246,11 +267,11 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
                     for y in yinlier:
                         if y == obj[7] / scale and obj not in tmp_floor:
                             tmp_floor.append(obj)
-                            print("tmp floor, iter: ", tmp_floor)
-        print("tmp floor: ", tmp_floor)
+                            #print("tmp floor, iter: ", tmp_floor)
+        #print("tmp floor: ", tmp_floor)
         if len(tmp_floor) > 1:
             f_list.append(tmp_floor)
-        print("floors: ", f_list)
+        #print("floors: ", f_list)
 
         # circle through colors:
         color = colors[idx % len(colors)]
@@ -270,7 +291,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
 def detect_floors(objects):  # Detecting floors on the facade from object coordinates
     f_list = []
     # Set constraint as input from another function
-    constraint = 0.2  # should be based on relationship between x and y values
+    constraint = 0.3  # should be based on relationship between x and y values
 
     tmp_floor = []
 
@@ -348,6 +369,8 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
     return f_list
 
 
+# -------------------------------- Error Correction ------------------------------------
+
 # Removes faulty floors (by angle, distance, etc.)
 def update_floors(floors, height):
     ys = []
@@ -369,7 +392,7 @@ def update_floors(floors, height):
 
         # Angle calculation - check (x deg):
         line = np.polyfit(x_list, y_list, 1)  # [0] is slope
-        if abs(line[0]) > 0.2:  # May be chosen using statistics for each floor
+        if abs(line[0]) > 0.3:  # May be chosen using statistics for each floor
             floors.pop(index)
 
         # Average Y value of floor -- Proximity check (dist between floors,  f1 - f2):
@@ -380,15 +403,32 @@ def update_floors(floors, height):
     #for tmp_floor in tmp_floors:
     #    print("TMPFLOOR: ", tmp_floor)
 
-    # Distance calculation:
+    # Distance calculation: (distance[0] is distance between floor_0 and floor_1)
+    distances = []
     for index, y in enumerate(ys):
         # index not at last pos
         if index < len(ys) - 1:
             d = abs(ys[index + 1] - y)
+            distances.append(d)
             print("Distance: ", d)
+
+    # Combine floors that are closely aligned to one single floor
+    for index, floor in enumerate(floors):
+        print("FLOOR .remove: ", floor)
+        if index < len(floors)-2 and len(floors) > 1:
+            # Checks for overlapping images on both left and right side of image
+
+            # Using | len(floors) - 3 | as this corresponds to the 2nd to last object (not including avg_y value)
+            if floors[index][0][1] < floors[index + 1][0][3] and floors[index][len(floor) - 2][1] < floors[index + 1][len(floors[index+1]) - 2][3]:
+                # Removes floor with fewer objects
+                if len(floors[index]) <= len(floors[index + 1]):
+                    floors.remove(floors[index])
+                else:
+                    floors.remove(floors[index+1])
 
     return floors
 
+#TODO: Facade segmenter; segment facade based on the relative floor line distances ...
 
 # --------------------------------- Plotting utils -------------------------------------
 # Draw on building images for visualisation purposes
