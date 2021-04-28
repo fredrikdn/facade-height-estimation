@@ -13,7 +13,7 @@ totallynotasecret = 'HgCroea_Pd-P48CASC7mA5QfcNk='
 
 myloc = 'googleimages/'
 
-# TODO: locations should be gathered from a selected region (i.e. Trondheim) at intervals of x meters in any direction
+# TODO: locations/addresses should be gathered from a selected region (i.e. Trondheim)
 locations = [
               #'raadyrlia,8,1270,oslo'# Points at the building with the corresponding address / given coordinate
              ]
@@ -23,11 +23,6 @@ if __name__ == "__main__":
     locations = getStreet('gloeshaugveien', 'trondheim', '7030')
     for loc in locations:
 
-        # TODO: Framework for Python - request (?with express.js server?) to return google.maps.getPhotographerPov()
-        # This is typically the driving direction for the image
-
-        #heads = get_heading(loc)  # 2 headings --> for loop
-        #heading = heads[0]
         request = 'https://maps.googleapis.com/maps/api/streetview?size=' + size + '&location=' + loc + '&heading=' + \
                   heading + '&pitch=' + pitch + '&key=' + API_KEY
 

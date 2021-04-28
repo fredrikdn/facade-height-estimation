@@ -1,6 +1,7 @@
 import time
 from heightutils import *
 from rules import *
+from geocoding import *
 
 start_time = time.time()
 runtime = 0
@@ -24,28 +25,32 @@ windows = []  # window list
 if __name__ == '__main__':
     with os.scandir(path) as it:
         for entry in it:
+            # File handling:
             infile, sort_file, pic, height, width = read_file(entry, folder)
-            #sort_y(infile)
 
             # Create lists and segment/detect floors:
             objects, lengths, heights, windows = sorted_array(infile)
-            #print("OBJECTS: ", objects)
-            #print("WINDOWS: ", windows)
-
             floors = multi_ransac(windows, height, width)
-            #print("#FLOORS: ", len(floors))
             floors = sort_objects(floors)
             floors = sort_floors_v2(floors)
             update_floors(floors, height)
-            #print("UPDATED #FLOORS: ", len(floors))
 
             # Estimate height:
+            height = estimate_height(floors)
 
-            estimate_height(floors)
-            #draw_centers(windows, path+pic)
-            #draw_floorlines(floors, path+pic, width)
+            # Geocode address:
+            lat, lng = get_loc(pic)
+            #print(lat)
 
+            # Add entry to CSV file:
+            csv = ()
+
+            # Visualisation - drawing:
             draw_lines_centers(windows, floors, path, pic, vis, width)
+            # draw_centers(windows, path+pic)
+            # draw_floorlines(floors, path+pic, width)
+
+            # Metrics:
             runtime = (time.time() - start_time)
             print("--- %s seconds ---" % runtime)
             print("   ")

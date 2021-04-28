@@ -1,5 +1,6 @@
 import psycopg2
 
+
 def openpgdb(database="norwaybuildings"):
     # connect pgsql database
     pgconn = psycopg2.connect(database=database, user="postgres", password="123456", host="vgi.ibm.ntnu.no", port="5432")

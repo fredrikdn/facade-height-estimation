@@ -17,6 +17,7 @@ import urllib.request as urlrequest
 
 # -------------------------------------- File processing ------------------------------------------
 
+
 def read_file(entry, folder):
     if entry.name.endswith(".jpg") and entry.is_file():
         pic = entry.name
@@ -33,6 +34,11 @@ def read_file(entry, folder):
         width, height = image.size
 
     return infile, sort_file, pic, height, width
+
+
+def get_address(file):
+    address = file.split('.jpg')[0]
+    print("ADDR: ", address)
 
 
 # --------------------------------------- Google API --------------------------------------------
@@ -73,7 +79,7 @@ def sign_url(input_url=None, secret=None):
     # Return signed URL
     return original_url + "&signature=" + encoded_signature.decode()
 
-
+# TODO: get addresses from complete file, not iterate through numbers!! THIS IS A HELPER FUNCTION FOR NOW
 # Define area of interest (street)
 def getStreet(street, post, city):
     locations = []
@@ -88,6 +94,10 @@ def get_img(loc, saveloc, signed):
     url = signed
     file = loc + ".jpg"
     urlrequest.urlretrieve(url, os.path.join(saveloc, file))
+
+
+# Geocoding
+#def get_coord():
 
 
 # ----------------------------- Sorting -------------------------------------
@@ -194,6 +204,7 @@ def sort_floors_v2(floors):
     # Sorts each floor in floors on y_avg value
     #print("floors before floor sort:", floors)
     floors = sorted(floors, key=lambda floor: floor[-1])
+    floors.reverse()
     #print("floors after floor sort:", floors)
     return floors
 
