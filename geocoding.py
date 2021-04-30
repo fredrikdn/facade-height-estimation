@@ -7,10 +7,11 @@ def get_loc(filename):
     gmaps = googlemaps.Client(key=API_KEY)
 
     address = filename.split('.jpg')[0]
+    #print("ADDR: ", address)
 
     # Geocoding an address
     geocode_result = gmaps.geocode(address)
-    print(geocode_result)
+    #print(geocode_result)
 
     file = json.dumps(geocode_result)
     loc = json.loads(file)
@@ -23,4 +24,4 @@ def get_loc(filename):
     #print("Lat: ", lat)
     #print("Lng: ", lng)
 
-    return lat, lng
+    return lat, lng, address

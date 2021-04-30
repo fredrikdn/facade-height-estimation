@@ -18,8 +18,12 @@ def searchBuildings(cur, building_id):
     for row in records:
         footprint = row[0]
         height = row[1]
-        print(footprint)
-        print(height)
+        print("Foorprint: ", footprint)
+        print("Height: ", height)
+
+
+#def findLocation(cur, location):
+
 
 
 if __name__ == '__main__':

@@ -8,7 +8,8 @@ runtime = 0
 totaltime = 0
 
 
-# Processing of the images:
+# File and image processing:
+csv = 'results/results.csv'
 path = 'googleimages/'
 folder = 'output/'
 vis = 'visualisations/'
@@ -39,11 +40,12 @@ if __name__ == '__main__':
             height = estimate_height(floors)
 
             # Geocode address:
-            lat, lng = get_loc(pic)
+            lat, lng, address = get_loc(pic)
             #print(lat)
 
             # Add entry to CSV file:
-            csv = ()
+            write_csv(csv, address, lat, lng, height)
+            update_csv(csv)
 
             # Visualisation - drawing:
             draw_lines_centers(windows, floors, path, pic, vis, width)

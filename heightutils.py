@@ -8,6 +8,10 @@ import os
 import PIL
 from operator import itemgetter
 
+# CSV and file handling
+from csv import writer
+import pandas as pd
+
 # URL & Google
 import hashlib
 import hmac
@@ -39,6 +43,18 @@ def read_file(entry, folder):
 def get_address(file):
     address = file.split('.jpg')[0]
     print("ADDR: ", address)
+
+
+def write_csv(filename, address, lat, lng, height):
+    with open(filename, 'a+', newline='') as write_obj:
+        csv_writer = writer(write_obj)
+        csv_writer.writerow([address, lat, lng, height])
+
+
+def update_csv(filename):
+    df = pd.read_csv(filename)
+    df.drop_duplicates(inplace=True)
+    df.to_csv(filename, index=False)
 
 
 # --------------------------------------- Google API --------------------------------------------
@@ -88,6 +104,9 @@ def getStreet(street, post, city):
         locations.append(tmp)
     return locations
 
+
+def get_addresses():
+    a = 1
 
 # Download images
 def get_img(loc, saveloc, signed):
