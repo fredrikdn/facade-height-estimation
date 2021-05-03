@@ -4,18 +4,31 @@ import json
 location = 'preprocessing/addresses.json'
 
 
-# Fetch addresses from OSM based on area
-def get_location(area, areacode):
+# Fetch addresses from OSM based on area, area code and street
+def get_location(area, areacode, street):
     overpass_url = "http://overpass-api.de/api/interpreter"
-    overpass_query = """
-    [out:json];
-    area["ISO3166-2"="{ac}"];
-    (node["addr:city"="{a}"](area);
-     way["addr:city"="{a}"](area);
-     rel["addr:city"="{a}"](area);
-    );
-    out center;
-    """.format(ac=areacode, a=area)
+    if street != '':
+        overpass_query = """
+        [out:json];
+        area["ISO3166-2"="{ac}"];
+        (node["addr:street"="{st}"](area);
+         way["addr:street"="{st}"](area);
+         rel["addr:street"="{st}"](area);
+        );
+        out center;
+        """.format(ac=areacode, st=street)
+
+    else:
+        overpass_query = """
+        [out:json];
+        area["ISO3166-2"="{ac}"];
+        (node["addr:city"="{a}"](area);
+         way["addr:city"="{a}"](area);
+         rel["addr:city"="{a}"](area);
+        );
+        out center;
+        """.format(ac=areacode, a=area)
+
     response = requests.get(overpass_url,
                             params={'data': overpass_query})
 
@@ -58,7 +71,7 @@ def structure_data(location):
         tmp = street + "," + num + "," + post + "," + city
         tmp = ''.join(tmp.split())
         tmp = tmp.lower().replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa')
-        print("LOWERREPLACE: ", tmp)
+        print("Addr: ", tmp)
         address_list.append(tmp)
         #print(address_list)
 
@@ -66,6 +79,6 @@ def structure_data(location):
 
 
 if __name__ == '__main__':
-    # List all addresses within the given area and areacode
-    get_location('Trondheim', 'NO-50')
+    # List all addresses within the given area and areacode (and streetname)
+    get_location('Trondheim', 'NO-50', 'Klæbuveien')
     structure_data(location=location)

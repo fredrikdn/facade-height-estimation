@@ -1,5 +1,5 @@
 from heightutils import *
-from osm import *
+from osm_addresses import *
 
 pitch = '20'
 heading = ''
@@ -16,11 +16,11 @@ myloc = 'googleimages/'  # Savelocation for imagery
 location = 'preprocessing/addresses.json'  # Addresses from OSM
 
 
-# TODO: locations/addresses should be gathered from a selected region (i.e. Trondheim)
+# locations/addresses gathered from a selected region (i.e. Trondheim)
 addresses = structure_data(location)
 print(addresses)
 
-
+# Get all images of buildings from Google street view from selected region
 if __name__ == "__main__":
     for loc in addresses:
 

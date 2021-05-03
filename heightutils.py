@@ -458,7 +458,6 @@ def update_floors(floors, height):
 
     return floors
 
-#TODO: Facade segmenter; segment facade based on the relative floor line distances ...
 
 # --------------------------------- Plotting utils -------------------------------------
 # Draw on building images for visualisation purposes

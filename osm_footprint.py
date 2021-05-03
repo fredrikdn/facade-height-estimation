@@ -29,5 +29,5 @@ def searchBuildings(cur, building_id):
 if __name__ == '__main__':
     pgconn, cur = openpgdb()
 
-    building_id = '30285315'
+    building_id = '159516557'
     searchBuildings(cur, building_id)
