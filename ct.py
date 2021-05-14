@@ -10,8 +10,8 @@ totaltime = 0
 
 # File and image processing:
 csv = 'results/results.csv'
-path = 'googleimages/'
-folder = 'output/'
+path = 'test_googleimages/'
+folder = 'test_output/'
 vis = 'visualisations/'
 target = 'trondheim-test.jpg'
 
@@ -26,15 +26,23 @@ windows = []  # window list
 if __name__ == '__main__':
     with os.scandir(path) as it:
         for entry in it:
-            # File handling:
+            # File processing: (input is a folder of images, Google img - should be named with address)
             infile, sort_file, pic, height, width = read_file(entry, folder)
 
             # Create lists and segment/detect floors:
             objects, lengths, heights, windows = sorted_array(infile)
             floors = multi_ransac(windows, height, width)
+
+            #  Sorting & Error correction:
             floors = sort_objects(floors)
             floors = sort_floors_v2(floors)
-            update_floors(floors, height)
+            floors = remove_avg_y(floors)
+
+            floors = remove_misaligned(floors)
+            floors = remove_redundant(floors)
+
+            floors = sort_objects(floors)
+            floors = sort_floors_v2(floors)
 
             # Estimate height:
             height = estimate_height(floors)
@@ -43,9 +51,11 @@ if __name__ == '__main__':
             lat, lng, address = get_loc(pic)
             #print(lat)
 
-            # Add entry to CSV file:
+            # Add entry to CSV file: ( + building_id, footprint...)
             write_csv(csv, address, lat, lng, height)
             update_csv(csv)
+
+            # TODO: OSM connected with CSV:
 
             # Visualisation - drawing:
             draw_lines_centers(windows, floors, path, pic, vis, width)

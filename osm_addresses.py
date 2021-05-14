@@ -80,5 +80,5 @@ def structure_data(location):
 
 if __name__ == '__main__':
     # List all addresses within the given area and areacode (and streetname)
-    get_location('Trondheim', 'NO-50', 'Klæbuveien')
+    get_location('Trondheim', 'NO-50', 'Gløshaugveien')
     structure_data(location=location)

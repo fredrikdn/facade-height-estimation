@@ -95,6 +95,7 @@ def sign_url(input_url=None, secret=None):
     # Return signed URL
     return original_url + "&signature=" + encoded_signature.decode()
 
+
 # TODO: get addresses from complete file, not iterate through numbers!! THIS IS A HELPER FUNCTION FOR NOW
 # Define area of interest (street)
 def getStreet(street, post, city):
@@ -105,18 +106,11 @@ def getStreet(street, post, city):
     return locations
 
 
-def get_addresses():
-    a = 1
-
 # Download images
 def get_img(loc, saveloc, signed):
     url = signed
     file = loc + ".jpg"
     urlrequest.urlretrieve(url, os.path.join(saveloc, file))
-
-
-# Geocoding
-#def get_coord():
 
 
 # ----------------------------- Sorting -------------------------------------
@@ -139,17 +133,20 @@ def sorted_array(file):  # Sort and create an array of coordinates
     height_list = []
     window_list = []
     # Create a sorted list (array)
-    with open(file, 'r') as sorted_file:
-        rows = sorted_file.readlines()
-        # for each processed object; do:
-        for row in rows:
-            splt = row.split()
-            tmp = []
-            i = 0
-            for s in splt:
-                tmp.append(float(s))
-                i = i + 1
-            object_list.append(tmp)
+    try:
+        with open(file, 'r') as sorted_file:
+            rows = sorted_file.readlines()
+            # for each processed object; do:
+            for row in rows:
+                splt = row.split()
+                tmp = []
+                i = 0
+                for s in splt:
+                    tmp.append(float(s))
+                    i = i + 1
+                object_list.append(tmp)
+    except FileNotFoundError:
+        print("File not found")
 
     # Find coordinates for left, right, center:
     for obj in object_list:
@@ -204,12 +201,13 @@ def sort_floors(floors):
             j -= 1
         floors[j + 1] = floor
 
-    print("FLOORS SORTED: ", floors)
-    print("#Floors: ", len(floors))
+    #print("FLOORS SORTED: ", floors)
+    #
+    #print("#Floors: ", len(floors))
     return floors
 
 
-# Sorting objects within floors (y value)
+# Sorting floors (y value)
 def sort_floors_v2(floors):
     # Assign avg y-value to each floor
     for floor in floors:
@@ -236,6 +234,7 @@ def sort_objects(floors):
         #print("FLOOR AFTER: ", floor)
         floors[index] = floor
     return floors
+
 
 # ----------------------------- Floor utils -------------------------------------
 # FLOOR DETECTION: Floor segmentation / detection - UTC algorithm
@@ -401,61 +400,109 @@ def detect_floors(objects):  # Detecting floors on the facade from object coordi
 
 # -------------------------------- Error Correction ------------------------------------
 
-# Removes faulty floors (by angle, distance, etc.)
-def update_floors(floors, height):
-    ys = []
-    tmp_floors = floors
+def remove_distance(floors):
+    # Distance calculation: (distance[0] is distance between floor_0 and floor_1)
+    distances = []
     for index, floor in enumerate(floors):
-        xx = []
-        yy = []
-        tmp_floor = floor
-        id = 0
-        for obj in floor:
+        # index not at last pos
+        if index < len(floor) - 1:
+            d = abs(floor[index + 1] - 1)
+            distances.append(d)
+            print("Distance: ", d)
 
-            if id < len(floor)-1:
-                xx.extend((obj[8], obj[6], obj[10]))
-                yy.extend((obj[9], obj[7], obj[11]))
-                id += 1
+    return floors
 
-        x_list = np.array(xx)
-        y_list = np.array(yy)
+
+# Angle check for misaligned/misclassified floors
+def remove_misaligned(floors):
+    for index, floor in enumerate(floors):
+        x_list, y_list = create_x_y_lists(floor)
 
         # Angle calculation - check (x deg):
         line = np.polyfit(x_list, y_list, 1)  # [0] is slope
         if abs(line[0]) > 0.3:  # May be chosen using statistics for each floor
             floors.pop(index)
+    return floors
 
-        # Average Y value of floor -- Proximity check (dist between floors,  f1 - f2):
-        ys.append(sum(y_list) / len(y_list))
-        #print("Ys: ", ys)
 
-    # TODO: Intersection calculation - remove obvious errors of intersecting floors
-    #for tmp_floor in tmp_floors:
-    #    print("TMPFLOOR: ", tmp_floor)
-
-    # Distance calculation: (distance[0] is distance between floor_0 and floor_1)
-    distances = []
-    for index, y in enumerate(ys):
-        # index not at last pos
-        if index < len(ys) - 1:
-            d = abs(ys[index + 1] - y)
-            distances.append(d)
-            print("Distance: ", d)
-
-    # Combine floors that are closely aligned to one single floor
-    for index, floor in enumerate(floors):
-        print("FLOOR .remove: ", floor)
-        if index < len(floors)-2 and len(floors) > 1:
-            # Checks for overlapping images on both left and right side of image
-
-            # Using | len(floors) - 3 | as this corresponds to the 2nd to last object (not including avg_y value)
-            if floors[index][0][1] < floors[index + 1][0][3] and floors[index][len(floor) - 2][1] < floors[index + 1][len(floors[index+1]) - 2][3]:
-                # Removes floor with fewer objects
-                if len(floors[index]) <= len(floors[index + 1]):
-                    floors.remove(floors[index])
+# Removes redundant and intersecting floors
+def remove_redundant(floors):
+    cont = 1
+    # Combine floors that are closely aligned to one single floor (SOLVES INTERSECTION PROBLEM)
+    while cont == 1:
+        for index, floor in enumerate(floors):
+            if index < len(floors) - 2 and len(floors) > 1:  # if not 2nd last element and not 1 floor
+                # Checks for intersection and redundancy:
+                # Using | len(floors) - 2 | as this corresponds to the 1nd to last object (not including avg_y value)
+                if floors[index][0][7] > floors[index + 1][0][7] and floors[index][len(floor) - 2][7] < \
+                        floors[index + 1][len(floors[index+1]) - 2][7] or floors[index][0][7] < floors[index + 1][0][7]\
+                        and floors[index][len(floor) - 2][7] > floors[index + 1][len(floors[index+1]) - 2][7] or \
+                        floors[index][0][1] < floors[index + 1][0][3] and floors[index][len(floor) - 2][1]\
+                        < floors[index + 1][len(floors[index+1]) - 2][3]:
+                    # Merges floors that are intersecting
+                    if len(floors[index]) <= len(floors[index + 1]):
+                        print("MERGE BEFORE: ", floors[index + 1])
+                        floors[index + 1].extend(floors[index])
+                        print("MERGE AFTER: ", floors[index + 1])
+                        floors.remove(floors[index])
+                    else:
+                        print("MERGE BEFORE: ", floors[index])
+                        floors[index].extend(floors[index + 1])
+                        print("MERGE AFTER: ", floors[index])
+                        floors.remove(floors[index + 1])
                 else:
-                    floors.remove(floors[index+1])
+                    cont = 0
+                """if floors[index][0][7] > floors[index + 1][0][7] and floors[index][len(floor) - 2][7] < \
+                        floors[index + 1][len(floors[index + 1]) - 2][7] or floors[index][0][7] < floors[index + 1][0][
+                    7] and floors[index][len(floor) - 2][7] > floors[index + 1][len(floors[index + 1]) - 2][7]:
+                    # Merges floors that are intersecting
+                    if len(floors[index]) <= len(floors[index + 1]):
+                        print("MERGE BEFORE: ", floors[index + 1])
+                        floors[index + 1].extend(floors[index])
+                        print("MERGE AFTER: ", floors[index + 1])
+                        floors.remove(floors[index])
+                    else:
+                        print("MERGE BEFORE: ", floors[index])
+                        floors[index].extend(floors[index + 1])
+                        print("MERGE AFTER: ", floors[index])
+                        floors.remove(floors[index + 1])
+                else:
+                    cont = 0
+                """
+            else:
+                cont = 0
+        cont = 0
+    return floors
 
+
+# HELPER FUNCTIONS FOR ERROR: ----->
+
+# Process x and y values of floors
+def create_x_y_lists(floor):
+    xx = []
+    yy = []
+    id = 0
+    for obj in floor:
+        if id < len(floor):
+            xx.extend((obj[8], obj[6], obj[10]))
+            yy.extend((obj[9], obj[7], obj[11]))
+            id += 1
+
+    x_list = np.array(xx)
+    y_list = np.array(yy)
+
+    return x_list, y_list
+
+
+def remove_avg_y(floors):
+    # Remove all avg y values
+    for floor in floors:
+        try:
+            #print("floor before: ", floor)
+            del floor[-1]  # Avg y value removed
+            #print("floor after: ", floor)
+        except IndexError:
+            print("Already removed")
     return floors
 
 
@@ -503,12 +550,12 @@ def draw_floorlines(flrs, img, width):  # Draw floor lines
         cv2.imwrite(name, image)
 
 
-def draw_lines_centers(objects, flrs, path, pic, output, width):
+def draw_lines_centers(objects, floors, path, pic, output, width):
     line_list = []
     # Image path and name
     img = path + pic
 
-    for index, floor in enumerate(flrs):
+    for index, floor in enumerate(floors):
         xx = []
         yy = []
 
