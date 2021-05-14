@@ -25,7 +25,6 @@ def searchBuildings(cur, building_id):
 #def findLocation(cur, location):
 
 
-
 if __name__ == '__main__':
     pgconn, cur = openpgdb()
 
