@@ -9,9 +9,9 @@ totaltime = 0
 
 
 # File and image processing:
-csv = 'results/results.csv'
-path = 'test_googleimages/'
-folder = 'test_output/'
+csv = 'results/test_results.csv'
+path = 'googleimages/'
+folder = 'output/'
 vis = 'visualisations/'
 target = 'trondheim-test.jpg'
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     with os.scandir(path) as it:
         for entry in it:
             # File processing: (input is a folder of images, Google img - should be named with address)
-            infile, sort_file, pic, height, width = read_file(entry, folder)
+            infile, sort_file, pic, height, width, bid, address = read_file(entry, folder)
 
             # Create lists and segment/detect floors:
             objects, lengths, heights, windows = sorted_array(infile)
@@ -45,14 +45,15 @@ if __name__ == '__main__':
             floors = sort_floors_v2(floors)
 
             # Estimate height:
+            # Also passes entry.name (address, building ID)
             height = estimate_height(floors)
 
             # Geocode address:
-            lat, lng, address = get_loc(pic)
+            #lat, lng, address = get_loc(pic)
             #print(lat)
 
             # Add entry to CSV file: ( + building_id, footprint...)
-            write_csv(csv, address, lat, lng, height)
+            write_csv(csv, bid, address, height)
             update_csv(csv)
 
             # TODO: OSM connected with CSV:

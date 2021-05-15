@@ -39,7 +39,14 @@ def get_location(area, areacode, street):
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
-# Create addresses in correct format
+def format_address(city, post, street, num):
+    address = street + "," + num + "," + post + "," + city
+    address = ''.join(address.split())
+    address = address.lower().replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa')
+    return address
+
+
+# Create address list in correct format
 def structure_data(location):
     with open(location, encoding='utf-8') as f:
         data = json.load(f)
@@ -68,10 +75,7 @@ def structure_data(location):
             print("Address not found")
             continue
 
-        tmp = street + "," + num + "," + post + "," + city
-        tmp = ''.join(tmp.split())
-        tmp = tmp.lower().replace('æ', 'ae').replace('ø', 'oe').replace('å', 'aa')
-        print("Addr: ", tmp)
+        tmp = format_address(city, post, street, num)
         address_list.append(tmp)
         #print(address_list)
 

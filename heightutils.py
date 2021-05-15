@@ -9,6 +9,7 @@ import PIL
 from operator import itemgetter
 
 # CSV and file handling
+import csv
 from csv import writer
 import pandas as pd
 
@@ -27,6 +28,10 @@ def read_file(entry, folder):
         pic = entry.name
         print("NAME: ", entry.name)
 
+        tmp = entry.name.split('.jpg')[0]
+        address = tmp.split('_')[0]
+        bid = tmp.split('_')[1]
+
         pic_c = pic + '.txt'
         pic_s = pic_c + '-sorted.txt'
 
@@ -37,7 +42,7 @@ def read_file(entry, folder):
         image = PIL.Image.open(folder + pic)
         width, height = image.size
 
-    return infile, sort_file, pic, height, width
+    return infile, sort_file, pic, height, width, bid, address
 
 
 def get_address(file):
@@ -45,16 +50,26 @@ def get_address(file):
     print("ADDR: ", address)
 
 
-def write_csv(filename, address, lat, lng, height):
+def write_csv(filename, bid, address, height):
     with open(filename, 'a+', newline='') as write_obj:
         csv_writer = writer(write_obj)
-        csv_writer.writerow([address, lat, lng, height])
+        csv_writer.writerow([bid, address, height])
 
 
 def update_csv(filename):
-    df = pd.read_csv(filename)
-    df.drop_duplicates(inplace=True)
-    df.to_csv(filename, index=False)
+    old = pd.read_csv(filename)
+    new = old.drop_duplicates(keep='first')
+    new.to_csv(filename, index=False)
+
+
+def read_csv(filename):
+    file = open(filename)
+    list = []
+    rows = csv.reader(file)
+    for row in rows:
+        list.append([row[0], row[1]])
+    print("list: ", list)
+    return list
 
 
 # --------------------------------------- Google API --------------------------------------------
