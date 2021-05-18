@@ -1,35 +1,56 @@
 import math
 
 # Predefined Values (meters)
-avg_Floor = 2.5
-avg_Roof = avg_Floor
+avg_floor = 2.5
 avg_ServiceFloor = 3.0
 avg_Door = 2.0
 
+basement_height = 0.5
+
+
 # Calculate window size
-size_list = []
+def window_size(floors):
+    size_list = []
+    avg_list = []
+    for floor in floors:
+        w_floor = []
+        for obj in floor:
+            y_dist = obj[3] - obj[1]
+            w_floor.append(y_dist)
+        avg_size = sum(w_floor) / len(w_floor)
+        avg_list.append(avg_size)
 
-# New attributes
-num_floors = 0
-basement = False
-door = -1
-coords = 'something'
-block = False
-shop = False
+        size_list.append(w_floor)
+    print(avg_list)
+    b = s = 0
+    basement = store = False
+    for i in range(1, len(avg_list)):
+        if avg_list[0] < avg_list[i] / 1.8:
+            b = b + 1
+        if avg_list[0] / 2 > avg_list[i]:
+            s = s + 1
+    # Check for basement / storefront type
+    if b == len(avg_list) - 1 and len(avg_list) > 1:
+        basement = True
+    if s == len(avg_list) - 1 and len(avg_list) > 1:
+        store = True
 
-#def define_facade(floors):
-
-
-#def rules():
+    return basement, store
 
 
 def estimate_height(floors):
-    height = len(floors)*avg_Floor
-    #Add extra height if facade contains shop
-    #if building_attr[5]:
-        #height += 0.5
-    #Add roof height
-    #height = (building_attr[0]-1) * avg_Floor
+    # window size rules
+    basement, store = window_size(floors)
+    print("BOOL: ", basement)
+
+    if basement:
+        height = (len(floors)-1) * avg_floor + basement_height
+        print("BASEMENT BRO")
+    elif store:
+        height = (len(floors)-1) * avg_floor + avg_ServiceFloor
+    else:
+        height = len(floors) * avg_floor
+
     print("Estimated Height: {} meters".format(height))
     return height
 

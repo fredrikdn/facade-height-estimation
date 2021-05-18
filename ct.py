@@ -43,10 +43,14 @@ if __name__ == '__main__':
 
             floors = sort_objects(floors)
             floors = sort_floors_v2(floors)
+            floors = remove_avg_y(floors)
 
-            # Estimate height:
+            # Rules - Estimate height:
             # Also passes entry.name (address, building ID)
+
             height = estimate_height(floors)
+
+
 
             # Geocode address:
             #lat, lng, address = get_loc(pic)

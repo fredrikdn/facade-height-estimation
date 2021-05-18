@@ -1,9 +1,17 @@
 # pip3 install -U -r requirements.txt
 # conda install numpy opencv matplotlib tqdm && conda install pytorch torchvision -c pytorch
-numpy
-opencv-python
+numpy~=1.19.5
+opencv-python~=4.5.1.48
 torch >= 1.0.0
-matplotlib
-tqdm
-sklearn
-psycopg2
+matplotlib~=3.3.3
+tqdm~=4.56.0
+sklearn~=0.0
+psycopg2~=2.8.6
+pandas~=1.2.4
+
+googlemaps~=4.4.5
+Pillow~=8.1.0
+scikit-learn~=0.24.1
+requests~=2.25.1
+Shapely~=1.7.1
+geojson~=2.5.0
