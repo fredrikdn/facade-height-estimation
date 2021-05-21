@@ -1,7 +1,7 @@
 import time
 from heightutils import *
 from rules import *
-from geocoding import *
+from tester import *
 
 start_time = time.time()
 runtime = 0
@@ -9,7 +9,7 @@ totaltime = 0
 
 
 # File and image processing:
-csv = 'results/test_results.csv'
+csv = 'results/results.csv'
 path = 'googleimages/'
 folder = 'output/'
 vis = 'visualisations/'
@@ -28,10 +28,16 @@ if __name__ == '__main__':
         for entry in it:
             # File processing: (input is a folder of images, Google img - should be named with address)
             infile, sort_file, pic, height, width, bid, address = read_file(entry, folder)
+            building_type = get_building_type(bid)
+            #building_footprint = get_building_footprint(bid)
+            print("BID: ", bid)
 
             # Create lists and segment/detect floors:
             objects, lengths, heights, windows = sorted_array(infile)
-            floors = multi_ransac(windows, height, width)
+            try:
+                floors = multi_ransac(windows, height, width)
+            except ValueError:
+                print("RANSAC could not find a valid consensus set")
 
             #  Sorting & Error correction:
             floors = sort_objects(floors)
@@ -48,19 +54,10 @@ if __name__ == '__main__':
             # Rules - Estimate height:
             # Also passes entry.name (address, building ID)
 
-            height = estimate_height(floors)
-
-
-
-            # Geocode address:
-            #lat, lng, address = get_loc(pic)
-            #print(lat)
+            height = estimate_height(floors, bid, building_type)
 
             # Add entry to CSV file: ( + building_id, footprint...)
-            write_csv(csv, bid, address, height)
-            update_csv(csv)
-
-            # TODO: OSM connected with CSV:
+            update_csv_v2(csv, bid, height)
 
             # Visualisation - drawing:
             draw_lines_centers(windows, floors, path, pic, vis, width)
@@ -72,6 +69,7 @@ if __name__ == '__main__':
             print("--- %s seconds ---" % runtime)
             print("   ")
 
+trim_csv(csv)
 totaltime = (time.time() - start_time)
 print("--- Total: %s seconds ---" % totaltime)
 print("COUNTER TERRORIST WIN")

@@ -1,4 +1,5 @@
 import math
+from osm_buildings import *
 
 # Predefined Values (meters)
 avg_floor = 2.5
@@ -21,7 +22,6 @@ def window_size(floors):
         avg_list.append(avg_size)
 
         size_list.append(w_floor)
-    print(avg_list)
     b = s = 0
     basement = store = False
     for i in range(1, len(avg_list)):
@@ -38,18 +38,18 @@ def window_size(floors):
     return basement, store
 
 
-def estimate_height(floors):
-    # window size rules
+def estimate_height(floors, bid, b_type):
+    # Window size rules
     basement, store = window_size(floors)
-    print("BOOL: ", basement)
 
     if basement:
         height = (len(floors)-1) * avg_floor + basement_height
-        print("BASEMENT BRO")
     elif store:
         height = (len(floors)-1) * avg_floor + avg_ServiceFloor
     else:
         height = len(floors) * avg_floor
+
+    # Building type rules
 
     print("Estimated Height: {} meters".format(height))
     return height

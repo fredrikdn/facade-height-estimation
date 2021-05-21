@@ -2,6 +2,7 @@ import requests
 import json
 from heightutils import *
 from osm_addresses import *
+from osm_buildings import *
 
 
 location = 'preprocessing/'
@@ -64,7 +65,12 @@ def point_in_poly(boundingbox, bid):
     except json.decoder.JSONDecodeError:
         print("No address-node returned")
 
-    data = response.json()
+    try:
+        data = response.json()
+        print("data: ", data)
+    except json.decoder.JSONDecodeError:
+        print("Data is None")
+        return
 
     if len(data["elements"]) > 0:
 
@@ -72,32 +78,35 @@ def point_in_poly(boundingbox, bid):
             city = data["elements"][0]["tags"]["addr:city"]
 
         except KeyError:
-            print("Min lat not found")
+            print("City not found")
 
         try:
             post = data["elements"][0]["tags"]["addr:postcode"]
 
         except KeyError:
-            print("Min lat not found")
+            print("Postcode not found")
 
         try:
             street = data["elements"][0]["tags"]["addr:street"]
 
         except KeyError:
-            print("Min lat not found")
+            print("Street not found")
 
         try:
             num = data["elements"][0]["tags"]["addr:housenumber"]
 
         except KeyError:
-            print("Min lat not found")
+            print("House number not found")
 
-        address = format_address(city, post, street, num)
+        try:
+            address = format_address(city, post, street, num)
+        except UnboundLocalError:
+            print("Unable to get address")
+            return
         height = 0
 
-        # Write CSV file: entry = (building_id, address, height)
+        # Write CSV file: entry = (building_id, address, b_type, height)
         write_csv(results + 'test_results.csv', bid, address, height)
-        update_csv(results + 'test_results.csv')
 
     else:
         print("No address-node contained in bbox")
@@ -108,6 +117,6 @@ if __name__ == '__main__':
         data = json.load(f)
     for i in range(0, len(data["elements"]) - 1):
         bbox, bid = get_bbox(location, i)  # the ith element
-        print("BBOX: ", bbox)
+        print("...")
         point_in_poly(bbox, bid)
 
