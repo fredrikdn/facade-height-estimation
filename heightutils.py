@@ -1,9 +1,12 @@
 import numpy as np
+
 import cv2
 import math
 import random
+from shapely.geometry import LineString
 from sklearn import linear_model
 import matplotlib.pyplot as plt
+
 import os
 import PIL
 from operator import itemgetter
@@ -11,6 +14,8 @@ from operator import itemgetter
 # CSV and file handling
 import csv
 from csv import writer
+from tempfile import NamedTemporaryFile
+import shutil
 import pandas as pd
 
 # URL & Google
@@ -56,10 +61,41 @@ def write_csv(filename, bid, address, height):
         csv_writer.writerow([bid, address, height])
 
 
-def update_csv(filename):
-    old = pd.read_csv(filename)
-    new = old.drop_duplicates(keep='first')
-    new.to_csv(filename, index=False)
+def update_csv(filename, bid, height):
+    # reading the csv file
+    print("--------------- CSV ---------------- \nfilename: {fn}; \nbid: {bid}; \nheight: {h}".format(fn=filename, bid=bid, h=height))
+    df = pd.read_csv(filename)
+    # updating the column value/data
+    df.loc[df.Bid == bid, "Height"] = height
+    # write to file
+    df.to_csv(filename, index=False)
+
+
+def update_csv_v2(filename, bid, height):
+    tempfile = NamedTemporaryFile(mode='w', delete=False)
+    fields = ["Bid", "Addr", "Height"]
+
+    with open(filename, 'r') as csvfile, tempfile:
+        reader = csv.DictReader(csvfile, fieldnames=fields)
+        writer = csv.DictWriter(tempfile, fieldnames=fields)
+
+        for row in reader:
+            if row["Bid"] == str(bid):
+                print('updating row', row["Bid"])
+                row["Bid"], row["Addr"], row["Height"] = bid, row["Addr"], height
+            row = {"Bid": row["Bid"], "Addr": row["Addr"], "Height": row["Height"]}
+            writer.writerow(row)
+
+    shutil.move(tempfile.name, filename)
+
+
+def trim_csv(filename):
+    # reading the csv file
+    df = pd.read_csv(filename)
+    # remove height == 0
+    df = df.drop(df.query('Height==0').sample(frac=1).index)
+    # write to file
+    df.to_csv(filename, index=False)
 
 
 def read_csv(filename):
@@ -287,7 +323,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         )
 
         res = ransac.fit(X, ys)
-        score = ransac.score(X, ys)
+        #score = ransac.score(X, ys)
 
         # Score is misleading, as the R^2 is calculated with multiransac
             # --> many points will be outliers initially and reduced iteratively
@@ -300,8 +336,6 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         # plot point cloud:
         xinlier = xs[inlier_mask]
         yinlier = ys[inlier_mask]
-        #print("INLIERS x: ", xinlier)
-        #print("INLIERS y: ", yinlier)
 
         # find and append object from object list, whose xs and ys correspond to inliers
         tmp_floor = []
@@ -440,6 +474,15 @@ def remove_misaligned(floors):
     return floors
 
 
+# Intersection
+def remove_intersect(floors):
+    for index, floor in enumerate(floors):
+        line = LineString([(0, 0), (1, 1)])
+        other = LineString([(0, 1), (1, 0)])
+        print(line.intersects(other))
+        # True
+
+
 # Removes redundant and intersecting floors
 def remove_redundant(floors):
     cont = 1
@@ -454,6 +497,7 @@ def remove_redundant(floors):
                         and floors[index][len(floor) - 2][7] > floors[index + 1][len(floors[index+1]) - 2][7] or \
                         floors[index][0][1] < floors[index + 1][0][3] and floors[index][len(floor) - 2][1]\
                         < floors[index + 1][len(floors[index+1]) - 2][3]:
+
                     # Merges floors that are intersecting
                     if len(floors[index]) <= len(floors[index + 1]):
                         print("MERGE BEFORE: ", floors[index + 1])
@@ -467,23 +511,6 @@ def remove_redundant(floors):
                         floors.remove(floors[index + 1])
                 else:
                     cont = 0
-                """if floors[index][0][7] > floors[index + 1][0][7] and floors[index][len(floor) - 2][7] < \
-                        floors[index + 1][len(floors[index + 1]) - 2][7] or floors[index][0][7] < floors[index + 1][0][
-                    7] and floors[index][len(floor) - 2][7] > floors[index + 1][len(floors[index + 1]) - 2][7]:
-                    # Merges floors that are intersecting
-                    if len(floors[index]) <= len(floors[index + 1]):
-                        print("MERGE BEFORE: ", floors[index + 1])
-                        floors[index + 1].extend(floors[index])
-                        print("MERGE AFTER: ", floors[index + 1])
-                        floors.remove(floors[index])
-                    else:
-                        print("MERGE BEFORE: ", floors[index])
-                        floors[index].extend(floors[index + 1])
-                        print("MERGE AFTER: ", floors[index])
-                        floors.remove(floors[index + 1])
-                else:
-                    cont = 0
-                """
             else:
                 cont = 0
         cont = 0
