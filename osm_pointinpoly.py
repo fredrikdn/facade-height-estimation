@@ -67,7 +67,7 @@ def point_in_poly(boundingbox, bid):
 
     try:
         data = response.json()
-        print("data: ", data)
+        #print("data: ", data)
     except json.decoder.JSONDecodeError:
         print("Data is None")
         return
@@ -106,7 +106,7 @@ def point_in_poly(boundingbox, bid):
         height = 0
 
         # Write CSV file: entry = (building_id, address, b_type, height)
-        write_csv(results + 'test_results.csv', bid, address, height)
+        write_csv(results + 'results.csv', bid, address, height)
 
     else:
         print("No address-node contained in bbox")

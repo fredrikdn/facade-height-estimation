@@ -62,11 +62,20 @@ def get_building_footprint(bid):
     return footprint_list
 
 
-if __name__ == '__main__':
-    # Gloeshaugveien ==: 63.412924, 10.3993103, 63.4151645, 10.4051818
+def building_counter():
+    with open('preprocessing/buildings.json', encoding='utf-8') as f:
+        data = json.load(f)
 
-    study_area = [63.433230, 10.393283, 63.434910, 10.404889]  # minlat, minlon, maxlat, maxlon
-    get_buildings(study_area)
+    print("# BUILDINGS: ", len(data["elements"]))
+
+
+if __name__ == '__main__':
+    # Gloeshaugveien: 63.412924, 10.3993103, 63.4151645, 10.4051818
+    # Trondheim: 63.40795, 10.33578, 63.45701, 10.46834
+    #study_area = [63.40795, 10.33578, 63.45701, 10.46834]  # minlat, minlon, maxlat, maxlon
+    #get_buildings(study_area)
+
+    building_counter()
     #b_type = get_building_type(38050098)
     #footprint_list = get_building_footprint(38050098)
     #print("FOOTPRINTS: ", footprint_list)

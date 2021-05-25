@@ -14,7 +14,7 @@ totallynotasecret = 'HgCroea_Pd-P48CASC7mA5QfcNk='
 
 myloc = 'googleimages/'  # Savelocation for imagery
 addr_file = 'preprocessing/addresses.json'  # Addresses from OSM
-csv = 'results/test_results.csv'
+csv = 'results/kluwerserror.csv'
 
 # TODO: get address from CSV file of pip
 # locations/addresses gathered from a selected region (i.e. Trondheim)

@@ -3,14 +3,10 @@ from heightutils import *
 from rules import *
 from tester import *
 
-start_time = time.time()
-runtime = 0
-totaltime = 0
-
 
 # File and image processing:
 csv = 'results/results.csv'
-path = 'googleimages/'
+path = 'test_googleimages/'
 folder = 'output/'
 vis = 'visualisations/'
 target = 'trondheim-test.jpg'
@@ -30,12 +26,12 @@ if __name__ == '__main__':
             infile, sort_file, pic, height, width, bid, address = read_file(entry, folder)
             building_type = get_building_type(bid)
             #building_footprint = get_building_footprint(bid)
-            print("BID: ", bid)
+            #print("BID: ", bid)
 
             # Create lists and segment/detect floors:
             objects, lengths, heights, windows = sorted_array(infile)
             try:
-                floors = multi_ransac(windows, height, width)
+                floors = multi_ransac(windows, bid, address)
             except ValueError:
                 print("RANSAC could not find a valid consensus set")
 
@@ -57,19 +53,15 @@ if __name__ == '__main__':
             height = estimate_height(floors, bid, building_type)
 
             # Add entry to CSV file: ( + building_id, footprint...)
-            update_csv_v2(csv, bid, height)
+            write_entry_csv(filename=csv, bid=bid, address=address, height=height)
+            #update_csv_v2(csv, bid, height)
 
             # Visualisation - drawing:
             draw_lines_centers(windows, floors, path, pic, vis, width)
             # draw_centers(windows, path+pic)
             # draw_floorlines(floors, path+pic, width)
 
-            # Metrics:
-            runtime = (time.time() - start_time)
-            print("--- %s seconds ---" % runtime)
-            print("   ")
 
 trim_csv(csv)
-totaltime = (time.time() - start_time)
-print("--- Total: %s seconds ---" % totaltime)
+
 print("COUNTER TERRORIST WIN")

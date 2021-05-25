@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', type=str, default='cfg/yolov3-3classes.cfg', help='cfg file path')
     parser.add_argument('--data-cfg', type=str, default='data/vgidata.data', help='coco.data file path')
     parser.add_argument('--weights', type=str, default='weights/windorbal/windorbal.pt', help='path to weights file')
-    parser.add_argument('--images', type=str, default='googleimages/', help='path to images')
+    parser.add_argument('--images', type=str, default='test_googleimages/', help='path to images')
     parser.add_argument('--output', type=str, default='output/', help='path to output folder')
     parser.add_argument('--img-size', type=int, default=1024, help='size of each image dimension')
     parser.add_argument('--conf-thres', type=float, default=0.1, help='object confidence threshold')
@@ -147,4 +147,3 @@ if __name__ == '__main__':
     #     detect(images='./testimg',
     #            output='./output')
 
-print("--- %s seconds ---" % (time.time() - start_time))

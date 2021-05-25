@@ -61,14 +61,12 @@ def write_csv(filename, bid, address, height):
         csv_writer.writerow([bid, address, height])
 
 
-def update_csv(filename, bid, height):
-    # reading the csv file
+def write_entry_csv(filename, bid, address, height):
+    # writing entry to the csv file
     print("--------------- CSV ---------------- \nfilename: {fn}; \nbid: {bid}; \nheight: {h}".format(fn=filename, bid=bid, h=height))
-    df = pd.read_csv(filename)
-    # updating the column value/data
-    df.loc[df.Bid == bid, "Height"] = height
-    # write to file
-    df.to_csv(filename, index=False)
+    with open(filename, 'a+', newline='') as write_obj:
+        csv_writer = writer(write_obj)
+        csv_writer.writerow([bid, address, height])
 
 
 def update_csv_v2(filename, bid, height):
@@ -291,7 +289,7 @@ def sort_objects(floors):
 # FLOOR DETECTION: Floor segmentation / detection - UTC algorithm
 
 
-def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floor lines
+def multi_ransac(objects, bid, address):  # RANSAC estimates for detecting floor lines
     f_list = []
 
     MIN_SAMPLES = 3
@@ -308,7 +306,7 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
     xs = np.array(xs)
     ys = np.array(ys)
 
-    plt.show()
+    #plt.show()
 
     colors = "rgbcmykw"
     idx = 0
@@ -360,7 +358,9 @@ def multi_ransac(objects, height, width):  # RANSAC estimates for detecting floo
         xs = xs[~inlier_mask]
         ys = ys[~inlier_mask]
 
-    plt.show()
+    #plt.show()
+    plt.savefig('plots/' + address + '_' + bid + '_plot.jpg')
+    plt.clf()
 
     return f_list
 
